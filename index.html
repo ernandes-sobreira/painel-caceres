@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Interativo · Saúde Ambiental ERS Cáceres-MT</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f7f4;--card:#fff;--bd:#dfe8df;
+  --v:#2e7d32;--v2:#43a047;--vcl:rgba(46,125,50,.13);
+  --az:#0277bd;--azcl:rgba(2,119,189,.13);
+  --fg:#d84315;--fgcl:rgba(216,67,21,.15);
+  --rx:#6a1b9a;--rxcl:rgba(106,27,154,.13);
+  --am:#e65100;--amcl:rgba(230,81,0,.14);
+  --ci:#546e7a;
+  --txt:#1b1b1b;--txt2:#555;--txt3:#888;
+  --r:10px;--g:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+
+.hdr{background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;
+  padding:16px 26px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.hdr h1{font-size:18px;font-weight:800;letter-spacing:-.2px}
+.hdr p{font-size:11px;opacity:.8;margin-top:2px}
+.pill{background:rgba(255,255,255,.16);border-radius:20px;padding:3px 11px;font-size:10px}
+
+.nav{background:#fff;border-bottom:2px solid var(--bd);display:flex;overflow-x:auto;padding:0 18px}
+.nb{padding:11px 15px;border:none;background:none;font-size:12.5px;font-weight:600;
+  color:var(--txt2);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s}
+.nb:hover{color:var(--v)}.nb.on{color:var(--v);border-bottom-color:var(--v);background:rgba(46,125,50,.04)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+
+.main{max-width:1380px;margin:0 auto;padding:18px 18px}
+.pnl{display:none}.pnl.on{display:block}
+
+/* CAIXA DE CONTEXTO */
+.ctx{border-radius:var(--r);padding:12px 16px;margin-bottom:var(--g);font-size:12px;line-height:1.6}
+.ctx.v{background:#e8f5e9;border-left:4px solid var(--v);color:#1b5e20}
+.ctx.a{background:#e3f2fd;border-left:4px solid var(--az);color:#01579b}
+.ctx.w{background:#fff3e0;border-left:4px solid var(--am);color:#7c3900}
+
+/* DESCRIÇÃO DO GRÁFICO */
+.gdesc{background:#f0f7ff;border:1px solid #c8dff8;border-radius:8px;
+  padding:11px 14px;margin-top:10px;font-size:11.5px;line-height:1.6;color:#1a3a5c}
+.gdesc-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-size:11px;font-weight:700;color:var(--az);margin-top:8px;user-select:none}
+.gdesc-toggle:hover{text-decoration:underline}
+.gdesc-body{margin-top:8px;display:none}
+.gdesc-body.open{display:block}
+.gdesc-sec{margin-bottom:8px}
+.gdesc-sec strong{color:#0d47a1;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.gdesc-sec p{margin-top:3px;font-size:11.5px;color:#2c4a7a;line-height:1.55}
+.fonte-tag{display:inline-block;background:#e3f2fd;color:var(--az);
+  font-size:10px;padding:2px 7px;border-radius:10px;margin-top:6px;font-weight:600}
+
+/* CONTROLES */
+.ctrl-bar{background:var(--card);border-radius:var(--r);padding:14px 16px;
+  margin-bottom:var(--g);box-shadow:0 1px 4px rgba(0,0,0,.07);
+  display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.ctrl-grp{display:flex;flex-direction:column;gap:4px;min-width:160px;flex:1}
+.ctrl-grp label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--txt2);font-weight:600}
+.ctrl-grp select{padding:6px 10px;border:1px solid var(--bd);border-radius:6px;
+  background:#fff;color:var(--txt);font-size:12.5px;cursor:pointer;width:100%}
+.btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.btn.prim{background:var(--v);color:#fff}.btn.prim:hover{background:var(--v2)}
+.btn.sec{background:#f0f4f0;color:var(--v);border:1px solid var(--v)}.btn.sec:hover{background:var(--vcl)}
+.btn.del{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+.btn.dl{background:#e3f2fd;color:var(--az);border:1px solid #90caf9}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:var(--g);margin-bottom:var(--g)}
+.g1{display:grid;grid-template-columns:1fr;gap:var(--g);margin-bottom:var(--g)}
+.card{background:var(--card);border-radius:var(--r);padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card h3{font-size:13px;font-weight:700;margin-bottom:2px}
+.sub{font-size:11px;color:var(--txt2);margin-bottom:12px;line-height:1.45}
+.card canvas{max-height:280px}
+.stit{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--v);
+  font-weight:700;margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+
+/* SAZONALIDADE CARDS */
+.saz-cards{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-bottom:var(--g)}
+.saz-card{border-radius:8px;padding:8px 3px;text-align:center;cursor:pointer;
+  transition:transform .1s;border:2px solid transparent}
+.saz-card:hover{transform:scale(1.06)}
+.saz-card.sel{border-color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.saz-mn{font-size:10.5px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.saz-vl{font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);line-height:1.2}
+.saz-lb{font-size:8.5px;color:rgba(255,255,255,.85);margin-top:1px}
+
+/* STAT BOX */
+.sb{background:#f8f9fa;border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-top:10px}
+.sb-row{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px}
+.sb-it{flex:1;min-width:80px}
+.sb-l{font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--txt2);margin-bottom:1px}
+.sb-v{font-size:17px;font-weight:800}
+.sig{color:var(--v)}.marg{color:var(--am)}.ns{color:var(--ci)}
+.sb-txt{font-size:11.5px;color:var(--txt2);line-height:1.55;margin-top:4px}
+.sb-eq{font-size:11px;color:var(--ci);font-family:monospace;margin-top:4px}
+
+/* HEATMAP */
+.hm{border-collapse:separate;border-spacing:2px;font-size:10px}
+.hm th{padding:3px 5px;font-size:10px;font-weight:700;text-align:center;color:var(--txt2)}
+.hm td{padding:4px 4px;border-radius:4px;text-align:center;min-width:36px;
+  font-size:9.5px;font-weight:600;cursor:pointer;transition:transform .1s}
+.hm td:hover{transform:scale(1.12);z-index:2;position:relative}
+.hm-label{font-weight:700!important;text-align:right!important;color:var(--txt2)!important;
+  background:none!important;cursor:default!important;transform:none!important;font-size:11px!important}
+
+/* REGRESSÕES */
+.regr-item{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;
+  font-size:11.5px;font-weight:600;border:1px solid var(--bd);background:#f8f9fa}
+.regr-item .rm{width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;
+  background:#ffebee;color:#c62828;font-weight:800;font-size:13px;line-height:20px;text-align:center;flex-shrink:0}
+.regr-item .rm:hover{background:#c62828;color:#fff}
+
+/* TABELA */
+.tbl-wrap{overflow-x:auto;margin-bottom:var(--g);max-height:420px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:#f0f4f0;padding:8px 10px;text-align:left;font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.4px;color:var(--txt2);
+  border-bottom:2px solid var(--bd);white-space:nowrap;position:sticky;top:0;z-index:1}
+tbody td{padding:7px 10px;border-bottom:1px solid #f0f0f0;cursor:pointer}
+tbody tr:hover{background:#f0f8f0}
+.tg1{color:var(--v);font-weight:700}.tg3{color:var(--ci)}
+.sig-badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700}
+.sig-badge.s1{background:#e8f5e9;color:var(--v)}
+.sig-badge.s2{background:#fff3e0;color:var(--am)}
+.sig-badge.s3{background:#f0f0f0;color:var(--ci)}
+
+/* HI */
+.hi-cat{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;color:#fff}
+.hi-ok{background:#43a047}.hi-cau{background:#f9a825;color:#333}
+.hi-ext{background:#ef6c00}.hi-per{background:#c62828}.hi-xper{background:#880e4f}
+
+/* NOTA FONTE */
+.nota-fonte{background:#fffde7;border:1px solid #f9e03e;border-radius:8px;
+  padding:10px 14px;margin-top:10px;font-size:11px;color:#6b5700;line-height:1.6}
+.nota-fonte strong{color:#4a3c00}
+
+footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 24px;
+  font-size:10px;color:var(--txt3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px}
+
+@media(max-width:900px){.g2{grid-template-columns:1fr}.saz-cards{grid-template-columns:repeat(6,1fr)}}
+@media(max-width:600px){.main{padding:11px 11px}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div>
+    <h1>Painel Interativo · Saúde Ambiental ERS Cáceres-MT</h1>
+    <p>13 municípios · Clima mensal NASA POWER 2010-2024 · Saúde anual DATASUS · 126 regressões</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+    <span class="pill">NASA POWER · MODIS · SIH/SUS · SIM/DO · SINAN</span>
+    <span class="pill">Ernandes Sobreira Oliveira Junior · UNEMAT / CELBE / LIPAN-LEFA</span>
+  </div>
+</header>
+
+<nav class="nav">
+  <button class="nb on" onclick="tab('sazo',this)"><span class="dot" style="background:var(--v)"></span>Sazonalidade</button>
+  <button class="nb" onclick="tab('serie',this)"><span class="dot" style="background:var(--az)"></span>Série Mensal</button>
+  <button class="nb" onclick="tab('regr',this)"><span class="dot" style="background:var(--rx)"></span>Saúde × Ambiente Anual</button>
+  <button class="nb" onclick="tab('risco',this)"><span class="dot" style="background:#880e4f"></span>Saúde × Ambiente Mensal</button>
+  <button class="nb" onclick="tab('comp',this)"><span class="dot" style="background:var(--am)"></span>Comparar Anos</button>
+  <button class="nb" onclick="tab('hmap',this)"><span class="dot" style="background:var(--fg)"></span>Heatmaps</button>
+  <button class="nb" onclick="tab('tabr',this)"><span class="dot" style="background:var(--ci)"></span>Correlações</button>
+</nav>
+
+<main class="main">
+
+<!-- ══════════════ SAZONALIDADE ══════════════ -->
+<section class="pnl on" id="p-sazo">
+<div class="ctx v">
+  <strong>O que é sazonalidade?</strong> É o padrão que se repete a cada ano. Este painel mostra a média de cada mês
+  calculada com 15 anos de dados (2010-2024). Serve para responder: <em>"Qual o mês mais perigoso para a saúde em Cáceres?"</em>
+  Clique em um mês para ver como aquele mês se comportou em cada ano.
+</div>
+
+<div id="saz-sel-var" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+  <button class="btn prim" onclick="setSazVar('tmax',this)">🌡️ T. Máxima</button>
+  <button class="btn sec" onclick="setSazVar('hi',this)">🔥 Sensação Térmica</button>
+  <button class="btn sec" onclick="setSazVar('prec',this)">🌧️ Chuva</button>
+  <button class="btn sec" onclick="setSazVar('aod',this)">💨 Fumaça/Ar</button>
+  <button class="btn sec" onclick="setSazVar('umid',this)">💧 Umidade</button>
+</div>
+<div class="saz-cards" id="saz-cards"></div>
+
+<div class="g2" id="saz-main-grid">
+  <div class="card">
+    <h3 id="saz-main-h3">Temperatura máxima por mês do ano — médias 2010-2024</h3>
+    <div class="sub" id="saz-main-sub">Média histórica de 15 anos. Clique nos botões acima para trocar a variável.</div>
+    <canvas id="g-saz-main"></canvas>
+    <div id="gdesc-saz-main">
+      <div class="gdesc-toggle" onclick="toggleDesc('gdesc-saz-main-body')">▶ Entenda este gráfico</div>
+      <div class="gdesc-body" id="gdesc-saz-main-body"></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn dl" onclick="dlChart('g-saz-main','sazonalidade')">⬇ PNG</button>
+      <button class="btn dl" onclick="dlSazCSV()">⬇ CSV</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3 id="saz-detail-h3">Clique em um mês ↑</h3>
+    <div class="sub" id="saz-detail-sub" style="margin-bottom:8px">Ou selecione uma doença abaixo.</div>
+    <canvas id="g-saz-detail" style="max-height:185px"></canvas>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)" id="saz-doenca-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <h3 style="font-size:12px;font-weight:700;color:var(--v);white-space:nowrap">🏥 Doença:</h3>
+        <select id="sel-saz-doenca" onchange="renderSazDoenca()" style="flex:1;min-width:140px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:#fff;color:var(--txt)">
+          <option value="">— selecione —</option>
+          <option value="RESPIRATORIO">🫁 Respiratório</option>
+          <option value="CARDIOVASCULAR">❤️ Cardiovascular</option>
+          <option value="PNEUMONIA">🫁 Pneumonia</option>
+          <option value="DENGUE">🦟 Dengue</option>
+          <option value="RENAL_URINARIO">💧 Renal/Urinário</option>
+          <option value="ASMA">💨 Asma</option>
+          <option value="DESNUTRICAO">⚠️ Desnutrição</option>
+          <option value="TRANSTORNOS_MENTAIS">🧠 Transt. Mentais</option>
+          <option value="ANIMAIS_PECONHENTOS">🐍 Peçonhentos</option>
+          <option value="CAUSAS_EXTERNAS">🚑 Causas Externas</option>
+          <option value="NEOPLASIAS">🔬 Neoplasias</option>
+          <option value="LEISHMANIOSE_MALARIA">🦟 Leish./Malária</option>
+          <option value="DIARREICAS_GASTROENTERITES">🦠 Diarreicas/Gastroenterites</option>
+          <option value="DPOC">💨 DPOC</option>
+        </select>
+        <span id="saz-doenca-info" style="font-size:11px;color:var(--v);font-weight:600"></span>
+      </div>
+      <h3 id="saz-doenca-h3" style="font-size:12px;font-weight:700;color:var(--v);margin-bottom:3px;display:none"></h3>
+      <div class="sub" id="saz-doenca-sub" style="font-size:10.5px;margin-bottom:8px"></div>
+      <canvas id="g-saz-doenca" style="max-height:180px"></canvas>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn dl" onclick="dlChart('g-saz-detail','mes_historico')">⬇ PNG clima</button>
+      <button class="btn dl" id="btn-dl-doenca" onclick="dlChart('g-saz-doenca','saz_doenca')">⬇ PNG doença</button>
+    </div>
+  </div>
+</div>
+
+<p class="stit">Perfil climático mensal — Cáceres 2010-2024</p>
+
+<div class="card" style="margin-bottom:var(--g)">
+  <h3 id="perfil-titulo">Temperatura máxima mensal com faixas de risco</h3>
+  <div class="sub" id="perfil-sub">Médias 2010-2024. Barras cinzas mostram o intervalo min-max histórico. Clique nos botões para mudar a variável.</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="perfil-btns">
+    <button class="btn prim" style="font-size:11px;padding:5px 11px" onclick="setPerfilVar('tmax',this)">🌡️ Temperatura</button>
+    <button class="btn sec" style="font-size:11px;padding:5px 11px" onclick="setPerfilVar('hi',this)">🔥 Sensação Térmica</button>
+    <button class="btn sec" style="font-size:11px;padding:5px 11px" onclick="setPerfilVar('prec',this)">🌧️ Precipitação</button>
+    <button class="btn sec" style="font-size:11px;padding:5px 11px" onclick="setPerfilVar('aod',this)">💨 Fumaça (AOD)</button>
+    <button class="btn sec" style="font-size:11px;padding:5px 11px" onclick="setPerfilVar('umid',this)">💧 Umidade</button>
+  </div>
+  <canvas id="g-perfil-zona" style="max-height:320px"></canvas>
+  <div class="gdesc-toggle" onclick="togglePerfilDesc()">▶ Entenda as faixas de risco e fontes normativas</div>
+  <div class="gdesc-body" id="gdesc-perfil-body"></div>
+  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn dl" style="font-size:11px;padding:5px 12px" onclick="dlChart('g-perfil-zona','perfil_climatico')">⬇ PNG</button>
+    <button class="btn dl" style="font-size:11px;padding:5px 12px" onclick="dlSazTableCSV()">⬇ CSV tabela</button>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:var(--g)">
+  <h3>📋 Tabela completa — Cáceres · médias 2010-2024</h3>
+  <div class="sub">Clique no cabeçalho das colunas para ordenar. O Índice de Calor (sensação térmica real) combina temperatura + umidade usando a fórmula Rothfusz (NWS, EUA).</div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Mês</th><th>T. Máx (°C)</th><th>T. Mín (°C)</th><th>T. Méd (°C)</th>
+        <th>Chuva (mm)</th><th>Chuva máx. histórica</th><th>Umidade (%)</th><th>AOD 550nm</th>
+        <th>Sensação (°C)</th><th>Categoria</th>
+      </tr></thead>
+      <tbody id="saz-table-body"></tbody>
+    </table>
+  </div>
+  <div class="nota-fonte">
+    <strong>Fontes:</strong> Temperatura, umidade e precipitação: NASA POWER API v2.5 (reanálise MERRA-2). AOD: NASA MODIS.
+    Sensação térmica: fórmula Rothfusz (NWS). Chuva máx. histórica = maior total mensal registrado na série 2010-2024.
+    <strong>Limitação precipitação:</strong> estimativa por satélite, não medição local. Eventos de chuva diária intensa (ex: 206 mm/dia) não são detectados por este método — requerem dados de estações ANA/INMET.
+  </div>
+  <div style="margin-top:10px"><button class="btn dl" onclick="dlSazTableCSV()">⬇ Baixar tabela CSV</button></div>
+</div>
+</section>
+
+<!-- ══════════════ SÉRIE MENSAL ══════════════ -->
+<section class="pnl" id="p-serie">
+<div class="ctx a">
+  <strong>Série mensal completa:</strong> 180 meses individuais de janeiro/2010 a dezembro/2024.
+  O eixo X mostra <strong>Ano e Mês</strong> (ex: "2010 Jan"). Eventos extremos marcados em vermelho.
+  <strong>Nota importante sobre precipitação:</strong> os dados são do satélite NASA POWER (reanálise atmosférica)
+  e representam a estimativa do total mensal. Para dados de precipitação diária pontual
+  (como 206 mm em um dia específico), é necessário usar dados de estações locais da ANA ou INMET.
+</div>
+
+<div class="ctrl-bar">
+  <div class="ctrl-grp" style="min-width:220px">
+    <label>Variável a visualizar</label>
+    <select id="sel-saz-serie" onchange="renderSerieMensal()">
+      <optgroup label="─── Clima ───">
+        <option value="tmax">🌡️ Temperatura máxima (°C)</option>
+        <option value="hi">🔥 Sensação Térmica — Índice de Calor (°C)</option>
+        <option value="prec">🌧️ Precipitação total mensal (mm)</option>
+        <option value="aod">💨 AOD 550nm — qualidade do ar / fumaça</option>
+        <option value="umid">💧 Umidade relativa (%)</option>
+      </optgroup>
+      <optgroup label="─── Doenças (Cáceres, internações/mês) ───">
+        <option value="d_RESPIRATORIO">🫁 Respiratório</option>
+        <option value="d_CARDIOVASCULAR">❤️ Cardiovascular</option>
+        <option value="d_PNEUMONIA">🫁 Pneumonia</option>
+        <option value="d_DENGUE">🦟 Dengue</option>
+        <option value="d_RENAL_URINARIO">💧 Renal/Urinário</option>
+        <option value="d_ASMA">💨 Asma</option>
+        <option value="d_DESNUTRICAO">⚠️ Desnutrição</option>
+        <option value="d_TRANSTORNOS_MENTAIS">🧠 Transt. Mentais</option>
+        <option value="d_ANIMAIS_PECONHENTOS">🐍 Peçonhentos</option>
+        <option value="d_CAUSAS_EXTERNAS">🚑 Causas Externas</option>
+        <option value="d_NEOPLASIAS">🔬 Neoplasias</option>
+        <option value="d_LEISHMANIOSE_MALARIA">🦟 Leish./Malária</option>
+      <option value="d_DIARREICAS_GASTROENTERITES">🦠 Diarreicas/Gastroenterites</option>
+        <option value="d_DPOC">💨 DPOC</option>
+      </optgroup>
+    </select>
+  </div>
+  <div style="align-self:flex-end;display:flex;gap:8px">
+    <button class="btn dl" onclick="dlChart('g-serie-mensal','serie_mensal')">⬇ PNG</button>
+    <button class="btn dl" onclick="dlSerieCSV()">⬇ CSV</button>
+  </div>
+</div>
+
+<div class="g1">
+  <div class="card">
+    <h3 id="serie-h3">Temperatura máxima — 180 meses (jan/2010 a dez/2024) · Cáceres</h3>
+    <div class="sub" id="serie-sub">Eixo X: mês e ano. Vermelho = evento extremo (acima do percentil 95). O texto no eixo X aparece a cada 6 meses para evitar sobreposição.</div>
+    <canvas id="g-serie-mensal" style="max-height:240px"></canvas>
+    <div id="serie-eventos" style="margin-top:8px;font-size:11px;color:var(--txt2)"></div>
+    <div id="gdesc-serie">
+      <div class="gdesc-toggle" onclick="toggleSerieDesc()">▶ Entenda este gráfico</div>
+      <div class="gdesc-body" id="gdesc-serie-body"></div>
+    </div>
+    <div class="nota-fonte" id="serie-nota-fonte">
+      <strong>Fonte:</strong> NASA POWER API v2.5 (MERRA-2). Evento extremo = acima do percentil 95 da série 2010-2024.
+      <strong>Limitação:</strong> Dados de reanálise por satélite — podem diferir de estações meteorológicas locais.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════ REGRESSÕES LIVRES ══════════════ -->
+<section class="pnl" id="p-regr">
+<div class="ctx v">
+  <strong>O que é uma regressão?</strong> É uma análise estatística que testa se duas variáveis têm relação linear.
+  O <strong>r de Pearson</strong> vai de -1 a +1: próximo de ±1 = relação forte; próximo de 0 = sem relação.
+  O <strong>p-valor</strong> indica se o resultado é estatisticamente significativo (p&lt;0,05 = sim).
+  Escolha qualquer combinação ambiental × saúde e veja o resultado instantaneamente.
+</div>
+<div class="ctrl-bar">
+  <div class="ctrl-grp">
+    <label>Variável ambiental (X)</label>
+    <select id="sel-x" onchange="renderRegr()">
+      <option value="T. máxima (°C)">🌡️ T. máxima anual</option>
+      <option value="Índice de Calor (°C)">🔥 Sensação Térmica (Índice de Calor)</option>
+      <option value="T. mínima (°C)">T. mínima anual</option>
+      <option value="T. média (°C)">T. média anual</option>
+      <option value="Precipitação (mm)">🌧️ Precipitação</option>
+      <option value="Umidade (%)">💧 Umidade relativa</option>
+      <option value="Radiação solar">☀️ Radiação solar</option>
+      <option value="AOD 550nm">💨 AOD 550nm (fumaça)</option>
+      <option value="Área queimada (ha)">🔥 Área queimada</option>
+    </select>
+  </div>
+  <div class="ctrl-grp">
+    <label>Desfecho de saúde (Y)</label>
+    <select id="sel-y" onchange="renderRegr()">
+      <option value="Respiratório (óbitos)">Respiratório — óbitos (SIM/DO)</option>
+      <option value="Cardiovascular (óbitos)">Cardiovascular — óbitos (SIM/DO)</option>
+      <option value="Respiratório (internações)">Respiratório — internações (SIH)</option>
+      <option value="Cardiovascular (internações)">Cardiovascular — internações (SIH)</option>
+      <option value="Pneumonia">Pneumonia — internações</option>
+      <option value="Asma">Asma — internações</option>
+      <option value="DPOC">DPOC — internações</option>
+      <option value="Dengue">Dengue — internações</option>
+      <option value="Diarreicas">Diarreicas — internações</option>
+      <option value="Renal">Renal/urinário — internações</option>
+      <option value="Malária">Malária — internações</option>
+      <option value="Desnutrição">Desnutrição — internações</option>
+      <option value="Neoplasias">Neoplasias — internações</option>
+      <option value="Transt. Mentais">Transtornos mentais — internações</option>
+    </select>
+  </div>
+  <div class="ctrl-grp" style="max-width:140px">
+    <label>Defasagem</label>
+    <select id="sel-lag" onchange="renderRegr()">
+      <option value="0">Sem lag (mesmo ano)</option>
+      <option value="1">Lag 1 ano (clima → saúde t+1)</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:8px;align-self:flex-end;flex-wrap:wrap">
+    <button class="btn prim" onclick="addRegrComp()">+ Comparar</button>
+    <button class="btn dl" onclick="dlChart('g-regr-scatter','dispersao')">⬇ PNG</button>
+  </div>
+</div>
+<div class="g2">
+  <div class="card">
+    <h3 id="regr-titulo">Dispersão + reta de regressão</h3>
+    <div class="sub">Cada ponto = 1 ano (rotule o mouse para ver qual). A reta mostra a tendência geral.</div>
+    <canvas id="g-regr-scatter"></canvas>
+    <div id="regr-stat"></div>
+  </div>
+  <div class="card">
+    <h3 id="regr-serie-titulo">Série temporal comparada</h3>
+    <div class="sub">Barras = desfecho de saúde (eixo esq.). Linha laranja = variável ambiental (eixo dir.).</div>
+    <canvas id="g-regr-serie"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-regr-serie','serie_regr')">⬇ PNG</button></div>
+  </div>
+</div>
+<div class="ctx a" style="margin-top:0">
+  <strong>Como usar o comparativo:</strong> primeiro escolha X e Y nos seletores acima e analise a regressão.
+  Depois clique em <strong>"+ Comparar"</strong> para salvar aquela combinação. Faça isso com várias combinações
+  (ex: Temperatura × Respiratório, AOD × Respiratório, Precipitação × Diarreicas).
+  O gráfico abaixo coloca todas lado a lado para você ver qual variável ambiental tem relação mais forte com a saúde.
+  Use ✕ para remover individualmente.
+</div>
+<div id="regr-lista" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+<div class="g1">
+  <div class="card">
+    <h3>Comparativo — força das associações (r de Pearson)</h3>
+    <div class="sub">Verde = estatisticamente significativo (p≤0,05) · Laranja = marginal (p≤0,10) · Cinza = não significativo. Barras positivas = mais exposição → mais doença. Negativas = mais exposição → menos doença.</div>
+    <canvas id="g-regr-comp" style="max-height:300px"></canvas>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button class="btn del" onclick="clearAllRegr()">✕ Limpar todas</button>
+      <button class="btn dl" onclick="dlChart('g-regr-comp','comp_regr')">⬇ PNG</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════ COMPARAR ANOS ══════════════ -->
+<section class="pnl" id="p-comp">
+<div class="ctx a">
+  <strong>Compare dois anos lado a lado, mês a mês.</strong>
+  Útil para perguntas como: "O perfil climático de 2024 (pior ano de incêndios) foi diferente de 2020?
+  Isso se refletiu na saúde?" Selecione os anos e a variável nos controles abaixo.
+</div>
+<div class="ctrl-bar">
+  <div class="ctrl-grp">
+    <label>Ano A (linha sólida)</label>
+    <select id="sel-ano-a" onchange="renderComp()"><option value="2010">2010</option><option value="2011">2011</option><option value="2012">2012</option><option value="2013">2013</option><option value="2014">2014</option><option value="2015">2015</option><option value="2016">2016</option><option value="2017">2017</option><option value="2018">2018</option><option value="2019">2019</option><option value="2020" selected>2020</option><option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option></select>
+  </div>
+  <div class="ctrl-grp">
+    <label>Ano B (linha tracejada)</label>
+    <select id="sel-ano-b" onchange="renderComp()"><option value="2010">2010</option><option value="2011">2011</option><option value="2012">2012</option><option value="2013">2013</option><option value="2014">2014</option><option value="2015">2015</option><option value="2016">2016</option><option value="2017">2017</option><option value="2018">2018</option><option value="2019">2019</option><option value="2020">2020</option><option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024" selected>2024</option></select>
+  </div>
+  <div class="ctrl-grp">
+    <label>Variável climática</label>
+    <select id="sel-comp-var" onchange="renderComp()">
+      <option value="tmax">🌡️ T. máxima (°C)</option>
+      <option value="hi">🔥 Sensação Térmica (°C)</option>
+      <option value="prec">🌧️ Precipitação (mm)</option>
+      <option value="aod">💨 AOD 550nm</option>
+      <option value="umid">💧 Umidade (%)</option>
+    </select>
+  </div>
+  <div class="ctrl-grp">
+    <label>Doença (internações Cáceres)</label>
+    <select id="sel-comp-doenca" onchange="renderComp()">
+      <option value="">— resumo geral —</option>
+      <option value="RESPIRATORIO">Respiratório</option>
+      <option value="CARDIOVASCULAR">Cardiovascular</option>
+      <option value="PNEUMONIA">Pneumonia</option>
+      <option value="DENGUE">Dengue</option>
+      <option value="RENAL_URINARIO">Renal/Urinário</option>
+      <option value="ASMA">Asma</option>
+      <option value="DESNUTRICAO">Desnutrição</option>
+      <option value="TRANSTORNOS_MENTAIS">Transt. Mentais</option>
+      <option value="ANIMAIS_PECONHENTOS">Peçonhentos</option>
+      <option value="CAUSAS_EXTERNAS">Causas Externas</option>
+      <option value="NEOPLASIAS">Neoplasias</option>
+      <option value="LEISHMANIOSE_MALARIA">Leish./Malária</option>
+      <option value="DIARREICAS_GASTROENTERITES">🦠 Diarreicas/Gastroenterites</option>
+      <option value="DPOC">💨 DPOC</option>
+    </select>
+  </div>
+  <div style="align-self:flex-end;display:flex;gap:8px">
+    <button class="btn dl" onclick="dlCompCSV()">⬇ CSV</button>
+  </div>
+</div>
+<div class="g2">
+  <div class="card">
+    <h3 id="comp-titulo">Perfil mensal comparado</h3>
+    <div class="sub">Linha sólida = Ano A · Tracejado = Ano B · 12 meses lado a lado</div>
+    <canvas id="g-comp-clima"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-comp-clima','comp_clima')">⬇ PNG</button></div>
+  </div>
+  <div class="card">
+    <h3>Diferença mês a mês (A − B)</h3>
+    <div class="sub">Verde = Ano A foi maior · Vermelho = Ano B foi maior</div>
+    <canvas id="g-comp-diff"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-comp-diff','comp_diff')">⬇ PNG</button></div>
+  </div>
+</div>
+<div class="g2">
+  <div class="card">
+    <h3>Radar — perfil climático comparado</h3>
+    <div class="sub">Compara 4 variáveis normalizadas — mostra qual ano foi mais extremo em cada dimensão</div>
+    <canvas id="g-comp-radar"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-comp-radar','comp_radar')">⬇ PNG</button></div>
+  </div>
+  <div class="card">
+    <h3 id="comp-saude-h3">Saúde — comparação entre anos</h3>
+    <div class="sub" id="comp-saude-sub">Selecione uma doença no filtro acima para ver internações mensais mês a mês. Sem seleção: resumo anual geral.</div>
+    <canvas id="g-comp-saude"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-comp-saude','comp_saude')">⬇ PNG</button></div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════ HEATMAPS ══════════════ -->
+<section class="pnl" id="p-hmap">
+<div class="ctx w">
+  <strong>Heatmap (mapa de calor):</strong> cada célula é um mês de um ano. Cor mais intensa = valor mais alto.
+  Clique em qualquer linha para ver o perfil detalhado daquele ano.
+  <strong>Leitura rápida:</strong> uma coluna muito vermelha = aquele mês é consistentemente crítico em todos os anos.
+</div>
+<div class="ctrl-bar">
+  <div class="ctrl-grp">
+    <label>Variável</label>
+    <select id="sel-hm" onchange="renderHM()">
+      <optgroup label="─── Clima ───">
+        <option value="aod">💨 AOD 550nm (fumaça)</option>
+        <option value="tmax">🌡️ T. máxima (°C)</option>
+        <option value="hi">🔥 Sensação Térmica (°C)</option>
+        <option value="prec">🌧️ Precipitação (mm)</option>
+        <option value="umid">💧 Umidade (%)</option>
+      </optgroup>
+      <optgroup label="─── Doenças (Cáceres, internações/mês) ───">
+        <option value="d_RESPIRATORIO">🫁 Respiratório</option>
+        <option value="d_CARDIOVASCULAR">❤️ Cardiovascular</option>
+        <option value="d_PNEUMONIA">🫁 Pneumonia</option>
+        <option value="d_DENGUE">🦟 Dengue</option>
+        <option value="d_RENAL_URINARIO">💧 Renal/Urinário</option>
+        <option value="d_ASMA">💨 Asma</option>
+        <option value="d_DESNUTRICAO">⚠️ Desnutrição</option>
+        <option value="d_TRANSTORNOS_MENTAIS">🧠 Transt. Mentais</option>
+        <option value="d_ANIMAIS_PECONHENTOS">🐍 Peçonhentos</option>
+        <option value="d_CAUSAS_EXTERNAS">🚑 Causas Externas</option>
+        <option value="d_NEOPLASIAS">🔬 Neoplasias</option>
+        <option value="d_LEISHMANIOSE_MALARIA">🦟 Leish./Malária</option>
+      <option value="d_DIARREICAS_GASTROENTERITES">🦠 Diarreicas/Gastroenterites</option>
+        <option value="d_DPOC">💨 DPOC</option>
+      </optgroup>
+    </select>
+  </div>
+  <div style="align-self:flex-end"><button class="btn dl" onclick="dlHMCSV()">⬇ CSV</button></div>
+</div>
+<div class="card g1" style="margin-bottom:var(--g)">
+  <h3 id="hm-titulo">Heatmap</h3>
+  <div class="sub" id="hm-sub">Clique em um ano para ver o perfil mensal detalhado abaixo.</div>
+  <div style="overflow-x:auto" id="hm-container"></div>
+</div>
+<div class="card">
+  <h3 id="hm-perfil-titulo">Perfil anual selecionado</h3>
+  <div class="sub" id="hm-ano-sub">Clique em uma linha do heatmap acima.</div>
+  <canvas id="g-hm-perfil" style="max-height:220px"></canvas>
+  <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-hm-perfil','hm_perfil')">⬇ PNG</button></div>
+</div>
+</section>
+
+<!-- ══════════════ CORRELAÇÕES ══════════════ -->
+<section class="pnl" id="p-tabr">
+<div class="ctx v">
+  <strong>Tabela completa de 126 regressões.</strong>
+  Clique em qualquer linha para abrir a análise na aba "Saúde × Ambiente Anual".
+  <strong>Como ler:</strong> r próximo de ±1 = associação forte · p&lt;0,05 = estatisticamente significativo ·
+  r² = porcentagem da variação de Y explicada por X.
+</div>
+<div class="ctrl-bar">
+  <div class="ctrl-grp" style="max-width:200px">
+    <label>Filtrar</label>
+    <select id="sel-sig-filter" onchange="renderTabr()">
+      <option value="todos">Todas (126)</option>
+      <option value="sig">Significativas (p ≤ 0,05)</option>
+      <option value="marg">Marginais (p ≤ 0,10)</option>
+      <option value="pos">Positivas (r > 0)</option>
+      <option value="neg">Negativas (r &lt; 0)</option>
+    </select>
+  </div>
+  <div class="ctrl-grp" style="max-width:200px">
+    <label>Ordenar por</label>
+    <select id="sel-sort" onchange="renderTabr()">
+      <option value="abs_r">|r| decrescente</option>
+      <option value="p">p-valor crescente</option>
+      <option value="r2">r² decrescente</option>
+    </select>
+  </div>
+  <div style="align-self:flex-end;display:flex;gap:8px;align-items:center">
+    <span id="tabr-count" style="font-size:12px;color:var(--txt2)"></span>
+    <button class="btn dl" onclick="dlTabrCSV()">⬇ CSV</button>
+    <button class="btn dl" onclick="dlChart('g-tabr-bars','top20')">⬇ PNG</button>
+  </div>
+</div>
+<div class="tbl-wrap">
+  <table>
+    <thead><tr>
+      <th>Variável Ambiental (X)</th><th>Desfecho de Saúde (Y)</th>
+      <th>r (Pearson)</th><th>r²</th><th>p-valor</th><th>Sig.</th><th>n</th>
+    </tr></thead>
+    <tbody id="tabr-body"></tbody>
+  </table>
+</div>
+<div class="g1">
+  <div class="card">
+    <h3>Top 20 correlações mais fortes</h3>
+    <div class="sub">Verde = p≤0,05 (significativo) · Laranja = p≤0,10 (marginal) · Cinza = não significativo</div>
+    <canvas id="g-tabr-bars" style="max-height:400px"></canvas>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════ SAÚDE MENSAL × CLIMA ══════════════ -->
+<section class="pnl" id="p-risco">
+<div class="ctx v">
+  Internações mensais (SIH/SUS) · Cáceres-MT · 2010-2024 · 12 grupos diagnósticos.
+  Meses sem registro no SIH = ausência (não interpolado).
+  <strong>10 associações significativas (p&lt;0,05)</strong> — mais forte: Precipitação × Dengue (r=+0,369, p&lt;0,001).
+</div>
+
+<p class="stit">Selecione grupo diagnóstico e variável climática</p>
+<div class="ctrl-bar">
+  <div class="ctrl-grp">
+    <label>Grupo diagnóstico (Y)</label>
+    <select id="sel-men-grupo" onchange="renderMensal()">
+      <option value="RESPIRATORIO">Respiratório (internações)</option>
+      <option value="CARDIOVASCULAR">Cardiovascular (internações)</option>
+      <option value="PNEUMONIA">Pneumonia (internações)</option>
+      <option value="ASMA">Asma (internações)</option>
+      <option value="DENGUE">Dengue (internações)</option>
+      <option value="RENAL_URINARIO">Renal/Urinário (internações)</option>
+      <option value="DESNUTRICAO">Desnutrição (internações)</option>
+      <option value="TRANSTORNOS_MENTAIS">Transtornos Mentais (internações)</option>
+      <option value="ANIMAIS_PECONHENTOS">Animais Peçonhentos (internações)</option>
+      <option value="CAUSAS_EXTERNAS">Causas Externas (internações)</option>
+      <option value="LEISHMANIOSE_MALARIA">Leishmaniose/Malária (internações)</option>
+      <option value="NEOPLASIAS">Neoplasias (SIH + SIM)</option>
+    </select>
+  </div>
+  <div class="ctrl-grp">
+    <label>Variável climática (X)</label>
+    <select id="sel-men-clima" onchange="renderMensal()">
+      <option value="tmax">Temperatura máxima (°C)</option>
+      <option value="prec">Precipitação (mm/mês)</option>
+      <option value="umid">Umidade relativa (%)</option>
+      <option value="aod">AOD 550nm (fumaça)</option>
+    </select>
+  </div>
+  <div style="align-self:flex-end;display:flex;gap:8px">
+    <button class="btn dl" onclick="dlChart('g-men-scatter','mensal_scatter')">⬇ PNG</button>
+    <button class="btn dl" onclick="dlMensalCSV()">⬇ CSV</button>
+  </div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <h3 id="men-scatter-h3">Dispersão mensal + regressão linear</h3>
+    <div class="sub" id="men-scatter-sub">Cada ponto = 1 mês (jan/2010 a dez/2024). Cor = intensidade climática.</div>
+    <canvas id="g-men-scatter"></canvas>
+    <div id="men-stat-box"></div>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-men-scatter','men_scatter')">⬇ PNG</button></div>
+  </div>
+  <div class="card">
+    <h3 id="men-serie-h3">Série temporal mensal — clima + saúde</h3>
+    <div class="sub">Barras = internações mensais. Linha = variável climática (eixo direito). Meses sem dado = lacuna.</div>
+    <canvas id="g-men-serie" style="max-height:260px"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-men-serie','men_serie')">⬇ PNG</button></div>
+  </div>
+</div>
+
+<p class="stit">Sazonalidade — média por mês do ano (2010-2024)</p>
+<div class="g2">
+  <div class="card">
+    <h3 id="men-saz-h3">Internações por mês do ano — padrão sazonal</h3>
+    <div class="sub">Média de internações em cada mês, calculada dos anos com dados. Revela o padrão sazonal da doença.</div>
+    <canvas id="g-men-saz"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-men-saz','men_saz')">⬇ PNG</button></div>
+  </div>
+  <div class="card">
+    <h3>Sazonalidade climática vs. sazonalidade da doença</h3>
+    <div class="sub">Sobreposição: em qual mês o clima e a doença atingem seus picos? Eixos normalizados para comparação direta.</div>
+    <canvas id="g-men-saz-comp"></canvas>
+    <div style="margin-top:8px"><button class="btn dl" onclick="dlChart('g-men-saz-comp','men_saz_comp')">⬇ PNG</button></div>
+  </div>
+</div>
+
+<p class="stit">Todas as correlações mensais significativas (p&lt;0,05) — Cáceres 2010-2024</p>
+<div class="card" style="margin-bottom:var(--g)">
+  <h3>10 associações mensais significativas · n até 180 meses · SIH/SUS + NASA POWER/MODIS</h3>
+  <div class="sub">Clique em qualquer linha para carregar a análise nos gráficos acima.</div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Clima (X)</th><th>Diagnóstico (Y)</th>
+        <th>r Pearson</th><th>r²</th><th>p-valor</th><th>Sig.</th><th>n meses</th><th>Interpretação</th>
+      </tr></thead>
+      <tbody id="men-corr-tbody"></tbody>
+    </table>
+  </div>
+  <div class="nota-fonte" style="margin-top:10px">
+    <strong>Fonte:</strong> Internações: DATASUS SIH/SUS. Clima: NASA POWER API v2.5 (MERRA-2). Fumaça: NASA MODIS AOD.
+    Município: Cáceres-MT. Período: jan/2010–dez/2024. Meses sem registro no SIH = ausência real (não interpolada).
+    Correlação de Pearson + teste t bilateral. Significativo: p &lt; 0,05.
+  </div>
+</div>
+</section>
+
+</main>
+
+<footer>
+  <span>NASA POWER API v2.5 (MERRA-2) · NASA MODIS AOD · MapBiomas Col.10.1 · DATASUS SIH/SUS + SIM/DO · SINAN/TABNET</span>
+  <span>Ernandes Sobreira Oliveira Junior · UNEMAT / CELBE / LIPAN-LEFA · ERS Cáceres-MT · jun/2026</span>
+</footer>
+
+<script>
+const D = {"anos":[2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024],"meses_nomes":["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],"sazonalidade":{"1":{"tmax":36.0,"tmin":21.4,"tmed":27.5,"prec":163.0,"umid":74.8,"rad":5.809,"aod":0.269,"hi":56.8},"2":{"tmax":34.9,"tmin":21.4,"tmed":27.2,"prec":172.0,"umid":77.2,"rad":5.461,"aod":0.288,"hi":54.1},"3":{"tmax":34.3,"tmin":20.0,"tmed":27.0,"prec":152.0,"umid":78.1,"rad":5.385,"aod":0.231,"hi":52.1},"4":{"tmax":34.2,"tmin":17.1,"tmed":26.5,"prec":68.0,"umid":75.3,"rad":4.978,"aod":0.171,"hi":49.9},"5":{"tmax":35.0,"tmin":13.6,"tmed":25.3,"prec":39.0,"umid":66.1,"rad":4.329,"aod":0.18,"hi":47.5},"6":{"tmax":35.5,"tmin":13.4,"tmed":25.4,"prec":15.0,"umid":57.3,"rad":4.213,"aod":0.191,"hi":44.6},"7":{"tmax":37.5,"tmin":12.2,"tmed":25.7,"prec":5.0,"umid":43.6,"rad":4.685,"aod":0.155,"hi":42.8},"8":{"tmax":40.5,"tmin":14.0,"tmed":28.1,"prec":9.0,"umid":35.8,"rad":5.055,"aod":0.313,"hi":43.5},"9":{"tmax":42.3,"tmin":18.3,"tmed":31.0,"prec":24.0,"umid":38.3,"rad":5.065,"aod":0.605,"hi":47.6},"10":{"tmax":41.7,"tmin":19.9,"tmed":30.8,"prec":76.0,"umid":52.6,"rad":5.442,"aod":0.422,"hi":61.7},"11":{"tmax":39.1,"tmin":20.1,"tmed":29.1,"prec":130.0,"umid":63.7,"rad":5.777,"aod":0.296,"hi":61.7},"12":{"tmax":36.5,"tmin":21.7,"tmed":28.4,"prec":132.0,"umid":70.5,"rad":5.761,"aod":0.275,"hi":56.0}},"tmax_por_ano":{"2010":[32.64,32.23,32.71,32.33,34.4,36.54,37.37,39.62,42.47,40.12,37.48,36.52],"2011":[31.97,30.7,30.5,30.34,30.37,33.77,36.85,41.12,40.97,39.71,39.96,38.68],"2012":[34.35,36.0,33.1,33.26,34.15,34.0,37.26,39.93,42.33,42.17,38.29,33.81],"2013":[33.14,32.34,35.38,33.45,34.21,34.92,37.17,39.88,41.32,38.63,38.21,35.92],"2014":[33.86,30.59,31.16,31.43,29.56,29.82,34.57,39.68,41.47,43.12,38.32,32.45],"2015":[35.45,35.05,35.53,34.12,34.37,34.77,38.51,42.0,43.04,44.64,39.38,37.9],"2016":[37.71,37.54,37.01,37.82,37.71,37.38,38.21,41.15,41.79,41.34,40.19,37.67],"2017":[39.12,36.23,36.67,36.38,36.92,36.59,37.92,40.29,41.78,42.37,37.96,34.79],"2018":[37.75,35.36,32.59,35.57,36.35,36.36,37.46,39.79,41.74,38.82,35.48,34.22],"2019":[38.69,37.82,34.53,33.31,35.0,36.52,38.06,40.17,43.07,41.43,39.81,35.84],"2020":[40.14,37.85,35.85,35.83,36.38,36.13,37.65,42.26,43.84,43.93,42.14,40.51],"2021":[38.81,39.47,37.18,36.32,37.32,37.22,38.05,40.77,42.3,41.31,36.68,32.88],"2022":[32.18,31.4,30.71,33.09,34.63,35.4,37.24,38.85,40.92,40.18,39.9,38.13],"2023":[35.39,31.42,32.08,32.56,35.04,35.45,38.21,40.99,43.9,44.99,44.2,42.25],"2024":[38.24,40.03,39.78,36.51,37.9,37.91,38.33,41.65,43.23,43.46,38.84,36.52]},"prec_por_ano":{"2010":[297.0,299.5,155.3,37.8,37.5,11.7,3.7,2.5,5.7,97.0,127.8,115.3],"2011":[323.6,270.4,302.3,78.3,12.1,12.3,1.2,4.3,18.0,52.4,92.7,170.2],"2012":[169.6,163.3,126.2,79.2,100.4,22.2,0.3,0.0,43.8,45.6,217.2,151.6],"2013":[177.3,133.9,161.8,77.1,22.3,45.6,10.5,0.0,32.4,104.2,114.9,138.6],"2014":[234.7,327.1,212.7,103.2,106.3,16.2,28.5,4.3,49.8,84.3,218.7,144.5],"2015":[101.1,144.1,109.7,93.3,44.9,2.4,11.2,1.9,20.7,64.5,97.5,76.9],"2016":[136.1,66.1,131.1,30.9,11.8,11.4,0.0,27.3,19.5,66.0,89.1,67.9],"2017":[67.9,92.9,79.1,47.4,35.0,1.5,0.0,33.8,14.4,62.6,114.6,160.0],"2018":[110.7,229.1,127.4,30.3,15.2,3.0,0.0,3.7,34.5,93.6,267.0,89.6],"2019":[96.1,129.1,109.7,132.0,46.5,3.9,1.6,8.4,17.7,78.4,96.0,142.3],"2020":[87.7,240.7,129.0,36.0,103.2,0.3,7.4,0.3,1.5,81.2,23.4,63.6],"2021":[97.0,76.6,111.0,51.9,3.7,16.8,0.0,0.6,40.2,96.1,251.4,267.8],"2022":[202.7,177.7,205.2,27.9,2.5,63.0,5.3,30.4,33.9,95.5,66.6,127.7],"2023":[230.3,141.5,173.9,108.3,29.5,15.6,0.0,10.2,16.8,45.9,56.7,125.2],"2024":[113.8,82.5,138.6,82.5,12.7,0.0,1.6,0.0,6.9,68.5,111.0,140.1]},"umid_por_ano":{"2010":[86.0,86.4,85.2,81.0,68.5,57.0,47.5,32.7,33.8,57.3,66.2,67.1],"2011":[84.9,87.7,89.2,86.8,83.9,68.1,53.5,38.2,38.6,54.2,56.9,68.1],"2012":[80.0,78.2,79.2,76.6,71.6,67.4,49.7,32.9,37.3,51.9,70.4,80.3],"2013":[81.0,82.5,77.4,77.9,66.0,64.9,47.8,31.0,43.9,61.3,70.3,74.9],"2014":[77.6,87.0,87.7,86.8,88.0,85.1,69.6,48.2,47.9,51.0,71.3,85.4],"2015":[73.6,74.5,74.5,76.5,71.6,58.2,49.8,31.2,38.6,44.5,62.1,63.1],"2016":[73.2,66.7,70.8,61.7,53.1,47.2,33.0,37.1,43.6,50.1,62.1,65.5],"2017":[64.4,71.3,69.8,69.6,63.9,49.0,34.5,42.2,33.9,51.8,65.5,76.1],"2018":[71.9,82.0,84.5,73.0,59.3,52.8,40.4,38.5,41.6,63.3,79.6,75.8],"2019":[67.9,70.6,75.2,80.0,71.1,52.6,38.8,34.6,35.9,50.1,62.1,71.7],"2020":[62.6,78.4,72.6,65.4,64.6,54.0,38.2,31.5,30.8,47.4,47.0,58.0],"2021":[67.3,61.6,68.7,62.4,49.9,47.1,30.1,31.5,38.5,56.9,80.9,85.9],"2022":[83.7,85.5,86.0,78.9,60.2,63.1,48.5,44.6,43.2,60.6,49.0,67.6],"2023":[81.1,84.0,83.9,79.9,66.2,54.1,37.4,33.6,36.5,39.6,45.5,49.0],"2024":[66.1,61.6,66.4,73.6,53.0,38.6,35.9,29.1,30.1,48.9,65.8,69.4]},"aod_por_ano":{"2010":[0.33,0.3,0.24,0.15,0.16,0.16,0.18,0.57,1.14,0.51,0.29,0.27],"2011":[0.31,0.44,0.28,0.14,0.15,0.16,0.15,0.22,0.4,0.31,0.18,0.26],"2012":[0.26,0.25,0.17,0.17,0.14,0.17,0.12,0.16,0.51,0.39,0.34,0.27],"2013":[0.25,0.27,0.23,0.19,0.22,0.21,0.16,0.15,0.32,0.32,0.23,0.28],"2014":[0.3,0.35,0.28,0.17,0.21,0.21,0.23,0.25,0.41,0.39,0.31,0.33],"2015":[0.21,0.3,0.19,0.18,0.19,0.16,0.2,0.21,0.57,0.48,0.4,0.35],"2016":[0.35,0.22,0.24,0.13,0.22,0.23,0.13,0.36,0.48,0.32,0.32,0.3],"2017":[0.28,0.3,0.21,0.2,0.19,0.14,0.1,0.27,0.48,0.39,0.28,0.31],"2018":[0.28,0.29,0.26,0.18,0.13,0.27,0.13,0.24,0.33,0.33,0.35,0.23],"2019":[0.22,0.25,0.21,0.21,0.17,0.16,0.15,0.39,0.59,0.28,0.24,0.31],"2020":[0.26,0.31,0.15,0.14,0.15,0.22,0.16,0.42,0.77,0.7,0.21,0.23],"2021":[0.31,0.23,0.21,0.15,0.19,0.22,0.13,0.31,0.44,0.36,0.3,0.25],"2022":[0.24,0.31,0.31,0.18,0.19,0.21,0.14,0.31,0.8,0.38,0.23,0.27],"2023":[0.24,0.25,0.24,0.2,0.21,0.17,0.15,0.36,0.36,0.42,0.46,0.23],"2024":[0.2,0.25,0.24,0.17,0.18,0.17,0.2,0.47,1.48,0.75,0.3,0.24]},"saude_series":{"Cardiovascular (\u00f3bitos)":[297,289,322,334,315,363,352,316,355,290,334,325,336,371,357],"Cardiovascular (interna\u00e7\u00f5es)":[1349,1248,1320,1088,1128,899,1003,1055,1399,1216,899,991,908,977,1007],"Respirat\u00f3rio (\u00f3bitos)":[100,102,97,101,91,114,131,115,131,121,144,95,123,179,175],"Respirat\u00f3rio (interna\u00e7\u00f5es)":[1400,1163,1543,1380,1108,1020,1220,1202,1145,1198,764,535,1154,1489,1370],"Pneumonia":[707,572,875,784,680,626,744,688,687,654,318,249,803,1030,907],"Asma":[229,191,196,135,27,40,30,29,26,43,10,17,22,24,16],"DPOC":[194,133,100,57,66,80,98,77,80,137,39,51,65,58,55],"Dengue":[312,69,134,125,24,13,9,8,9,14,56,16,14,38,96],"Diarreicas":[682,494,533,309,154,102,117,135,161,143,80,84,88,86,122],"Renal":[1087,1097,1337,1050,1112,1264,1492,1409,1273,1192,864,892,1073,1611,1558],"Mal\u00e1ria":[5,1,2,2,0,1,2,3,2,5,4,11,2,2,7],"Desnutri\u00e7\u00e3o":[59,51,38,28,26,17,27,13,21,44,28,37,38,47,36],"Neoplasias":[94,164,403,687,657,701,680,725,483,624,356,428,683,612,501],"Transt. Mentais":[1,11,21,28,15,18,23,33,21,36,26,28,12,13,11]},"clima_series":{"T. m\u00e1xima (\u00b0C)":[36.203,35.412,36.554,36.214,34.669,37.897,38.793,38.085,36.791,37.854,39.376,38.193,36.053,38.04,39.367],"T. m\u00ednima (\u00b0C)":[16.415,17.216,16.953,16.955,17.902,19.511,16.801,18.368,17.286,18.769,18.425,17.977,15.876,19.065,18.898],"T. m\u00e9dia (\u00b0C)":[26.709,26.537,27.034,26.892,26.159,28.508,28.239,28.298,27.074,28.181,28.803,28.111,26.585,28.779,29.127],"Precipita\u00e7\u00e3o (mm)":[99.233,111.483,93.283,84.883,127.525,64.017,54.767,59.1,83.675,71.808,64.525,84.425,86.533,79.492,63.183],"Umidade (%)":[64.051,67.511,64.626,64.903,73.795,59.855,55.338,57.652,63.569,59.23,54.203,56.733,64.246,57.567,53.214],"Radia\u00e7\u00e3o solar":[5.098,5.199,5.248,5.108,4.919,5.195,5.062,5.166,5.103,5.228,5.356,5.212,5.268,5.193,5.094],"AOD 550nm":[0.358,0.25,0.246,0.236,0.287,0.287,0.275,0.263,0.252,0.265,0.31,0.258,0.298,0.274,0.388],"\u00c1rea queimada (ha)":[50641,55196,98840,29539,4822,29904,6571,10540,11163,105076,359880,329003,10439,49827,455288],"\u00cdndice de Calor (\u00b0C)":[49.29,47.48,51.09,51.12,49.88,52.34,54.21,53.09,52.27,52.18,54.49,52.57,49.83,48.98,54.19]},"regressoes":{"T. m\u00e1xima (\u00b0C)||Cardiovascular (\u00f3bitos)":{"r":0.466,"r2":0.217,"p":0.08,"slope":8.5045,"intercept":13.18,"n":15},"T. m\u00ednima (\u00b0C)||Cardiovascular (\u00f3bitos)":{"r":0.302,"r2":0.091,"p":0.2741,"slope":7.3635,"intercept":199.62,"n":15},"T. m\u00e9dia (\u00b0C)||Cardiovascular (\u00f3bitos)":{"r":0.499,"r2":0.249,"p":0.0583,"slope":13.2505,"intercept":-36.23,"n":15},"Precipita\u00e7\u00e3o (mm)||Cardiovascular (\u00f3bitos)":{"r":-0.489,"r2":0.239,"p":0.0645,"slope":-0.6293,"intercept":381.92,"n":15},"Umidade (%)||Cardiovascular (\u00f3bitos)":{"r":-0.432,"r2":0.187,"p":0.1077,"slope":-2.0017,"intercept":452.7,"n":15},"Radia\u00e7\u00e3o solar||Cardiovascular (\u00f3bitos)":{"r":-0.036,"r2":0.001,"p":0.8993,"slope":-9.0019,"intercept":376.88,"n":15},"AOD 550nm||Cardiovascular (\u00f3bitos)":{"r":0.123,"r2":0.015,"p":0.6617,"slope":76.5498,"intercept":308.73,"n":15},"\u00c1rea queimada (ha)||Cardiovascular (\u00f3bitos)":{"r":0.11,"r2":0.012,"p":0.6962,"slope":0.0,"intercept":328.31,"n":15},"T. m\u00e1xima (\u00b0C)||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.508,"r2":0.259,"p":0.0529,"slope":-60.1144,"intercept":3341.4,"n":15},"T. m\u00ednima (\u00b0C)||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.375,"r2":0.141,"p":0.1681,"slope":-59.2936,"intercept":2152.26,"n":15},"T. m\u00e9dia (\u00b0C)||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.554,"r2":0.307,"p":0.0323,"slope":-95.2448,"intercept":3734.47,"n":15},"Precipita\u00e7\u00e3o (mm)||Cardiovascular (interna\u00e7\u00f5es)":{"r":0.487,"r2":0.237,"p":0.0655,"slope":4.0637,"intercept":766.47,"n":15},"Umidade (%)||Cardiovascular (interna\u00e7\u00f5es)":{"r":0.5,"r2":0.25,"p":0.0577,"slope":15.0032,"intercept":182.45,"n":15},"Radia\u00e7\u00e3o solar||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.273,"r2":0.074,"p":0.3251,"slope":-445.0041,"intercept":3396.81,"n":15},"AOD 550nm||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.185,"r2":0.034,"p":0.51,"slope":-743.0513,"intercept":1309.52,"n":15},"\u00c1rea queimada (ha)||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.305,"r2":0.093,"p":0.2685,"slope":-0.0004,"intercept":1136.68,"n":15},"T. m\u00e1xima (\u00b0C)||Respirat\u00f3rio (\u00f3bitos)":{"r":0.648,"r2":0.42,"p":0.0089,"slope":12.3793,"intercept":-340.48,"n":15},"T. m\u00ednima (\u00b0C)||Respirat\u00f3rio (\u00f3bitos)":{"r":0.446,"r2":0.199,"p":0.0959,"slope":11.3689,"intercept":-80.66,"n":15},"T. m\u00e9dia (\u00b0C)||Respirat\u00f3rio (\u00f3bitos)":{"r":0.7,"r2":0.49,"p":0.0037,"slope":19.4452,"intercept":-416.76,"n":15},"Precipita\u00e7\u00e3o (mm)||Respirat\u00f3rio (\u00f3bitos)":{"r":-0.545,"r2":0.296,"p":0.0358,"slope":-0.7333,"intercept":181.3,"n":15},"Umidade (%)||Respirat\u00f3rio (\u00f3bitos)":{"r":-0.648,"r2":0.42,"p":0.009,"slope":-3.1403,"intercept":313.14,"n":15},"Radia\u00e7\u00e3o solar||Respirat\u00f3rio (\u00f3bitos)":{"r":0.166,"r2":0.028,"p":0.5538,"slope":43.775,"intercept":-104.76,"n":15},"AOD 550nm||Respirat\u00f3rio (\u00f3bitos)":{"r":0.43,"r2":0.185,"p":0.11,"slope":279.1236,"intercept":42.24,"n":15},"\u00c1rea queimada (ha)||Respirat\u00f3rio (\u00f3bitos)":{"r":0.381,"r2":0.145,"p":0.1612,"slope":0.0001,"intercept":113.7,"n":15},"T. m\u00e1xima (\u00b0C)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":-0.243,"r2":0.059,"p":0.3834,"slope":-44.788,"intercept":2849.99,"n":15},"T. m\u00ednima (\u00b0C)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":-0.194,"r2":0.038,"p":0.4877,"slope":-47.9071,"intercept":2030.28,"n":15},"T. m\u00e9dia (\u00b0C)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":-0.177,"r2":0.031,"p":0.5269,"slope":-47.6444,"intercept":2497.68,"n":15},"Precipita\u00e7\u00e3o (mm)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":0.093,"r2":0.009,"p":0.7421,"slope":1.2083,"intercept":1080.48,"n":15},"Umidade (%)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":0.214,"r2":0.046,"p":0.4446,"slope":10.0011,"intercept":568.34,"n":15},"Radia\u00e7\u00e3o solar||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":-0.265,"r2":0.07,"p":0.3392,"slope":-675.3349,"intercept":4666.33,"n":15},"AOD 550nm||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":0.096,"r2":0.009,"p":0.7327,"slope":604.91,"intercept":1008.13,"n":15},"\u00c1rea queimada (ha)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":-0.386,"r2":0.149,"p":0.1549,"slope":-0.0007,"intercept":1253.55,"n":15},"T. m\u00e1xima (\u00b0C)||Pneumonia":{"r":-0.146,"r2":0.021,"p":0.6025,"slope":-20.7169,"intercept":1461.01,"n":15},"T. m\u00ednima (\u00b0C)||Pneumonia":{"r":-0.082,"r2":0.007,"p":0.7702,"slope":-15.5872,"intercept":965.11,"n":15},"T. m\u00e9dia (\u00b0C)||Pneumonia":{"r":-0.052,"r2":0.003,"p":0.8545,"slope":-10.6647,"intercept":983.35,"n":15},"Precipita\u00e7\u00e3o (mm)||Pneumonia":{"r":-0.003,"r2":0.0,"p":0.9906,"slope":-0.0331,"intercept":690.98,"n":15},"Umidade (%)||Pneumonia":{"r":0.122,"r2":0.015,"p":0.6656,"slope":4.3709,"intercept":421.21,"n":15},"Radia\u00e7\u00e3o solar||Pneumonia":{"r":-0.3,"r2":0.09,"p":0.2767,"slope":-586.1415,"intercept":3714.67,"n":15},"AOD 550nm||Pneumonia":{"r":0.137,"r2":0.019,"p":0.6257,"slope":660.9437,"intercept":501.13,"n":15},"\u00c1rea queimada (ha)||Pneumonia":{"r":-0.357,"r2":0.128,"p":0.1909,"slope":-0.0005,"intercept":740.87,"n":15},"T. m\u00e1xima (\u00b0C)||Asma":{"r":-0.53,"r2":0.281,"p":0.0423,"slope":-28.3997,"intercept":1128.31,"n":15},"T. m\u00ednima (\u00b0C)||Asma":{"r":-0.493,"r2":0.243,"p":0.0616,"slope":-35.3509,"intercept":696.87,"n":15},"T. m\u00e9dia (\u00b0C)||Asma":{"r":-0.554,"r2":0.307,"p":0.032,"slope":-43.2504,"intercept":1265.7,"n":15},"Precipita\u00e7\u00e3o (mm)||Asma":{"r":0.484,"r2":0.235,"p":0.0672,"slope":1.8326,"intercept":-81.02,"n":15},"Umidade (%)||Asma":{"r":0.466,"r2":0.217,"p":0.0799,"slope":6.3421,"intercept":-318.5,"n":15},"Radia\u00e7\u00e3o solar||Asma":{"r":-0.012,"r2":0.0,"p":0.9651,"slope":-9.1373,"intercept":116.18,"n":15},"AOD 550nm||Asma":{"r":-0.074,"r2":0.006,"p":0.7925,"slope":-135.5536,"intercept":107.38,"n":15},"\u00c1rea queimada (ha)||Asma":{"r":-0.258,"r2":0.066,"p":0.3535,"slope":-0.0001,"intercept":83.38,"n":15},"T. m\u00e1xima (\u00b0C)||DPOC":{"r":-0.342,"r2":0.117,"p":0.2127,"slope":-9.848,"intercept":453.33,"n":15},"T. m\u00ednima (\u00b0C)||DPOC":{"r":-0.333,"r2":0.111,"p":0.2254,"slope":-12.8217,"intercept":313.73,"n":15},"T. m\u00e9dia (\u00b0C)||DPOC":{"r":-0.369,"r2":0.136,"p":0.1762,"slope":-15.4667,"intercept":513.95,"n":15},"Precipita\u00e7\u00e3o (mm)||DPOC":{"r":0.27,"r2":0.073,"p":0.3306,"slope":0.5489,"intercept":41.07,"n":15},"Umidade (%)||DPOC":{"r":0.282,"r2":0.08,"p":0.3085,"slope":2.0631,"intercept":-40.05,"n":15},"Radia\u00e7\u00e3o solar||DPOC":{"r":-0.119,"r2":0.014,"p":0.6736,"slope":-47.1862,"intercept":329.63,"n":15},"AOD 550nm||DPOC":{"r":0.121,"r2":0.015,"p":0.6685,"slope":118.3469,"intercept":52.49,"n":15},"\u00c1rea queimada (ha)||DPOC":{"r":-0.359,"r2":0.129,"p":0.1886,"slope":-0.0001,"intercept":96.77,"n":15},"T. m\u00e1xima (\u00b0C)||Dengue":{"r":-0.246,"r2":0.061,"p":0.3764,"slope":-13.9896,"intercept":584.28,"n":15},"T. m\u00ednima (\u00b0C)||Dengue":{"r":-0.379,"r2":0.143,"p":0.1641,"slope":-28.7411,"intercept":572.94,"n":15},"T. m\u00e9dia (\u00b0C)||Dengue":{"r":-0.3,"r2":0.09,"p":0.2776,"slope":-24.7853,"intercept":748.25,"n":15},"Precipita\u00e7\u00e3o (mm)||Dengue":{"r":0.3,"r2":0.09,"p":0.2767,"slope":1.2039,"intercept":-36.09,"n":15},"Umidade (%)||Dengue":{"r":0.189,"r2":0.036,"p":0.5001,"slope":2.7242,"intercept":-103.98,"n":15},"Radia\u00e7\u00e3o solar||Dengue":{"r":-0.101,"r2":0.01,"p":0.7207,"slope":-79.0165,"intercept":470.45,"n":15},"AOD 550nm||Dengue":{"r":0.431,"r2":0.185,"p":0.1092,"slope":832.4699,"intercept":-173.23,"n":15},"\u00c1rea queimada (ha)||Dengue":{"r":0.057,"r2":0.003,"p":0.8401,"slope":0.0,"intercept":59.1,"n":15},"T. m\u00e1xima (\u00b0C)||Diarreicas":{"r":-0.525,"r2":0.276,"p":0.0445,"slope":-70.91,"intercept":2864.28,"n":15},"T. m\u00ednima (\u00b0C)||Diarreicas":{"r":-0.508,"r2":0.259,"p":0.0529,"slope":-91.7603,"intercept":1849.1,"n":15},"T. m\u00e9dia (\u00b0C)||Diarreicas":{"r":-0.565,"r2":0.32,"p":0.0281,"slope":-111.0997,"intercept":3293.36,"n":15},"Precipita\u00e7\u00e3o (mm)||Diarreicas":{"r":0.511,"r2":0.262,"p":0.0513,"slope":4.873,"intercept":-179.58,"n":15},"Umidade (%)||Diarreicas":{"r":0.468,"r2":0.219,"p":0.0783,"slope":16.0484,"intercept":-761.22,"n":15},"Radia\u00e7\u00e3o solar||Diarreicas":{"r":-0.079,"r2":0.006,"p":0.7789,"slope":-147.6058,"intercept":981.46,"n":15},"AOD 550nm||Diarreicas":{"r":0.03,"r2":0.001,"p":0.9157,"slope":137.5059,"intercept":180.4,"n":15},"\u00c1rea queimada (ha)||Diarreicas":{"r":-0.223,"r2":0.05,"p":0.4249,"slope":-0.0003,"intercept":250.62,"n":15},"T. m\u00e1xima (\u00b0C)||Renal":{"r":0.315,"r2":0.099,"p":0.2526,"slope":50.118,"intercept":-648.67,"n":15},"T. m\u00ednima (\u00b0C)||Renal":{"r":0.297,"r2":0.088,"p":0.2819,"slope":63.1748,"intercept":98.68,"n":15},"T. m\u00e9dia (\u00b0C)||Renal":{"r":0.412,"r2":0.169,"p":0.1274,"slope":95.256,"intercept":-1414.91,"n":15},"Precipita\u00e7\u00e3o (mm)||Renal":{"r":-0.383,"r2":0.146,"p":0.1592,"slope":-4.293,"intercept":1572.16,"n":15},"Umidade (%)||Renal":{"r":-0.306,"r2":0.094,"p":0.2675,"slope":-12.3469,"intercept":1975.12,"n":15},"Radia\u00e7\u00e3o solar||Renal":{"r":-0.28,"r2":0.078,"p":0.3128,"slope":-613.4198,"intercept":4387.98,"n":15},"AOD 550nm||Renal":{"r":0.14,"r2":0.02,"p":0.619,"slope":757.1991,"intercept":1006.35,"n":15},"\u00c1rea queimada (ha)||Renal":{"r":-0.149,"r2":0.022,"p":0.5953,"slope":-0.0002,"intercept":1245.44,"n":15},"T. m\u00e1xima (\u00b0C)||Mal\u00e1ria":{"r":0.501,"r2":0.251,"p":0.0574,"slope":0.9845,"intercept":-33.46,"n":15},"T. m\u00ednima (\u00b0C)||Mal\u00e1ria":{"r":0.167,"r2":0.028,"p":0.5513,"slope":0.4396,"intercept":-4.54,"n":15},"T. m\u00e9dia (\u00b0C)||Mal\u00e1ria":{"r":0.416,"r2":0.173,"p":0.1228,"slope":1.1911,"intercept":-29.69,"n":15},"Precipita\u00e7\u00e3o (mm)||Mal\u00e1ria":{"r":-0.261,"r2":0.068,"p":0.3469,"slope":-0.0363,"intercept":6.23,"n":15},"Umidade (%)||Mal\u00e1ria":{"r":-0.555,"r2":0.308,"p":0.0319,"slope":-0.2768,"intercept":20.18,"n":15},"Radia\u00e7\u00e3o solar||Mal\u00e1ria":{"r":0.22,"r2":0.048,"p":0.4306,"slope":5.9717,"intercept":-27.57,"n":15},"AOD 550nm||Mal\u00e1ria":{"r":0.316,"r2":0.1,"p":0.2514,"slope":21.1436,"intercept":-2.72,"n":15},"\u00c1rea queimada (ha)||Mal\u00e1ria":{"r":0.741,"r2":0.55,"p":0.0016,"slope":0.0,"intercept":1.75,"n":15},"T. m\u00e1xima (\u00b0C)||Desnutri\u00e7\u00e3o":{"r":-0.236,"r2":0.056,"p":0.3962,"slope":-2.123,"intercept":113.19,"n":15},"T. m\u00ednima (\u00b0C)||Desnutri\u00e7\u00e3o":{"r":-0.278,"r2":0.077,"p":0.3153,"slope":-3.3383,"intercept":93.29,"n":15},"T. m\u00e9dia (\u00b0C)||Desnutri\u00e7\u00e3o":{"r":-0.227,"r2":0.051,"p":0.4165,"slope":-2.9618,"intercept":115.95,"n":15},"Precipita\u00e7\u00e3o (mm)||Desnutri\u00e7\u00e3o":{"r":0.413,"r2":0.171,"p":0.1255,"slope":0.2619,"intercept":12.56,"n":15},"Umidade (%)||Desnutri\u00e7\u00e3o":{"r":0.133,"r2":0.018,"p":0.637,"slope":0.3026,"intercept":15.51,"n":15},"Radia\u00e7\u00e3o solar||Desnutri\u00e7\u00e3o":{"r":0.15,"r2":0.023,"p":0.5936,"slope":18.5798,"intercept":-61.93,"n":15},"AOD 550nm||Desnutri\u00e7\u00e3o":{"r":0.259,"r2":0.067,"p":0.3504,"slope":79.2884,"intercept":11.55,"n":15},"\u00c1rea queimada (ha)||Desnutri\u00e7\u00e3o":{"r":0.111,"r2":0.012,"p":0.6938,"slope":0.0,"intercept":32.96,"n":15},"T. m\u00e1xima (\u00b0C)||Neoplasias":{"r":0.169,"r2":0.029,"p":0.5472,"slope":23.4398,"intercept":-354.44,"n":15},"T. m\u00ednima (\u00b0C)||Neoplasias":{"r":0.275,"r2":0.076,"p":0.321,"slope":50.9985,"intercept":-385.92,"n":15},"T. m\u00e9dia (\u00b0C)||Neoplasias":{"r":0.244,"r2":0.06,"p":0.3802,"slope":49.3151,"intercept":-844.64,"n":15},"Precipita\u00e7\u00e3o (mm)||Neoplasias":{"r":-0.396,"r2":0.157,"p":0.1434,"slope":-3.8802,"intercept":837.51,"n":15},"Umidade (%)||Neoplasias":{"r":-0.118,"r2":0.014,"p":0.6758,"slope":-4.148,"intercept":773.31,"n":15},"Radia\u00e7\u00e3o solar||Neoplasias":{"r":-0.185,"r2":0.034,"p":0.5086,"slope":-354.5464,"intercept":2350.48,"n":15},"AOD 550nm||Neoplasias":{"r":-0.266,"r2":0.071,"p":0.3385,"slope":-1254.5871,"intercept":875.08,"n":15},"\u00c1rea queimada (ha)||Neoplasias":{"r":-0.292,"r2":0.085,"p":0.2914,"slope":-0.0004,"intercept":561.97,"n":15},"T. m\u00e1xima (\u00b0C)||Transt. Mentais":{"r":0.363,"r2":0.132,"p":0.1831,"slope":2.413,"intercept":-70.2,"n":15},"T. m\u00ednima (\u00b0C)||Transt. Mentais":{"r":0.289,"r2":0.083,"p":0.297,"slope":2.5601,"intercept":-25.67,"n":15},"T. m\u00e9dia (\u00b0C)||Transt. Mentais":{"r":0.329,"r2":0.108,"p":0.2312,"slope":3.1785,"intercept":-68.15,"n":15},"Precipita\u00e7\u00e3o (mm)||Transt. Mentais":{"r":-0.454,"r2":0.206,"p":0.089,"slope":-0.2128,"intercept":37.22,"n":15},"Umidade (%)||Transt. Mentais":{"r":-0.315,"r2":0.099,"p":0.2533,"slope":-0.5303,"intercept":52.2,"n":15},"Radia\u00e7\u00e3o solar||Transt. Mentais":{"r":0.257,"r2":0.066,"p":0.3548,"slope":23.5553,"intercept":-101.82,"n":15},"AOD 550nm||Transt. Mentais":{"r":-0.574,"r2":0.329,"p":0.0252,"slope":-129.7211,"intercept":56.53,"n":15},"\u00c1rea queimada (ha)||Transt. Mentais":{"r":0.062,"r2":0.004,"p":0.8251,"slope":0.0,"intercept":19.37,"n":15},"\u00cdndice de Calor (\u00b0C)||Cardiovascular (\u00f3bitos)":{"r":0.372,"r2":0.139,"p":0.1718,"slope":4.6189,"intercept":92.37,"n":15},"\u00cdndice de Calor (\u00b0C)||Cardiovascular (interna\u00e7\u00f5es)":{"r":-0.362,"r2":0.131,"p":0.1844,"slope":-29.1205,"intercept":2599.83,"n":15},"\u00cdndice de Calor (\u00b0C)||Respirat\u00f3rio (\u00f3bitos)":{"r":0.304,"r2":0.092,"p":0.2707,"slope":3.9445,"intercept":-82.01,"n":15},"\u00cdndice de Calor (\u00b0C)||Respirat\u00f3rio (interna\u00e7\u00f5es)":{"r":-0.346,"r2":0.119,"p":0.2071,"slope":-43.3408,"intercept":3412.92,"n":15},"\u00cdndice de Calor (\u00b0C)||Pneumonia":{"r":-0.275,"r2":0.076,"p":0.3213,"slope":-26.4435,"intercept":2051.0,"n":15},"\u00cdndice de Calor (\u00b0C)||Asma":{"r":-0.566,"r2":0.32,"p":0.0278,"slope":-20.6312,"intercept":1132.21,"n":15},"\u00cdndice de Calor (\u00b0C)||DPOC":{"r":-0.413,"r2":0.171,"p":0.1258,"slope":-8.0965,"intercept":503.25,"n":15},"\u00cdndice de Calor (\u00b0C)||Dengue":{"r":-0.314,"r2":0.098,"p":0.2548,"slope":-12.1168,"intercept":686.89,"n":15},"\u00cdndice de Calor (\u00b0C)||Diarreicas":{"r":-0.537,"r2":0.288,"p":0.0391,"slope":-49.2801,"intercept":2758.93,"n":15},"\u00cdndice de Calor (\u00b0C)||Renal":{"r":0.124,"r2":0.015,"p":0.6605,"slope":13.374,"intercept":531.52,"n":15},"\u00cdndice de Calor (\u00b0C)||Mal\u00e1ria":{"r":0.34,"r2":0.115,"p":0.2349,"slope":0.4405,"intercept":-19.25,"n":14},"\u00cdndice de Calor (\u00b0C)||Desnutri\u00e7\u00e3o":{"r":-0.604,"r2":0.364,"p":0.0172,"slope":-3.6842,"intercept":223.86,"n":15},"\u00cdndice de Calor (\u00b0C)||Neoplasias":{"r":0.332,"r2":0.11,"p":0.2261,"slope":31.3431,"intercept":-1095.37,"n":15},"\u00cdndice de Calor (\u00b0C)||Transt. Mentais":{"r":0.553,"r2":0.306,"p":0.0324,"slope":2.4974,"intercept":-108.9,"n":15}},"fogo":[50641,55196,98840,29539,4822,29904,6571,10540,11163,105076,359880,329003,10439,49827,455288],"hi_por_ano":{"2010":[49.8,48.2,49.6,46.0,47.4,48.2,45.5,40.5,43.7,60.9,57.4,54.3],"2011":[46.4,42.6,42.4,40.9,40.1,45.1,47.2,42.3,42.1,56.9,59.9,63.9],"2012":[53.7,59.8,48.1,47.4,48.1,45.5,46.3,40.8,43.6,64.0,64.2,51.6],"2013":[49.2,46.8,56.5,48.8,45.5,47.3,45.1,40.7,54.5,58.2,63.7,57.1],"2014":[50.3,41.9,44.4,45.1,38.5,38.6,48.6,52.5,58.1,66.8,65.1,48.6],"2015":[54.3,53.3,55.2,50.7,48.9,43.5,50.0,43.1,44.4,66.0,61.9,56.8],"2016":[63.9,58.0,58.8,55.5,49.6,45.4,38.9,42.3,55.7,59.4,65.3,57.7],"2017":[62.7,55.9,56.7,55.4,53.6,44.2,38.7,50.4,42.9,64.7,58.8,53.1],"2018":[63.0,59.6,48.8,54.4,48.9,45.4,42.4,40.8,54.1,60.6,58.5,50.7],"2019":[63.8,62.2,51.6,49.4,51.0,45.8,38.9,41.1,44.4,59.7,63.7,54.6],"2020":[65.5,69.1,55.3,50.6,52.1,45.4,38.5,43.4,45.1,66.4,59.6,62.9],"2021":[63.8,61.8,58.0,50.6,46.6,44.9,38.7,41.7,43.6,65.2,65.2,50.7],"2022":[46.7,44.4,42.0,47.9,44.0,47.9,45.6,47.9,52.8,63.9,53.8,61.1],"2023":[59.1,43.9,46.4,46.4,48.4,43.5,39.1,42.0,45.3,46.6,65.4,61.7],"2024":[60.4,64.2,67.4,58.7,50.1,38.8,39.2,42.6,44.4,66.0,62.7,55.8]},"hi_saz":[56.8,54.1,52.1,49.9,47.5,44.6,42.8,43.5,47.6,61.7,61.7,56.0],"labels_mensais":["2010 Jan","2010 Fev","2010 Mar","2010 Abr","2010 Mai","2010 Jun","2010 Jul","2010 Ago","2010 Set","2010 Out","2010 Nov","2010 Dez","2011 Jan","2011 Fev","2011 Mar","2011 Abr","2011 Mai","2011 Jun","2011 Jul","2011 Ago","2011 Set","2011 Out","2011 Nov","2011 Dez","2012 Jan","2012 Fev","2012 Mar","2012 Abr","2012 Mai","2012 Jun","2012 Jul","2012 Ago","2012 Set","2012 Out","2012 Nov","2012 Dez","2013 Jan","2013 Fev","2013 Mar","2013 Abr","2013 Mai","2013 Jun","2013 Jul","2013 Ago","2013 Set","2013 Out","2013 Nov","2013 Dez","2014 Jan","2014 Fev","2014 Mar","2014 Abr","2014 Mai","2014 Jun","2014 Jul","2014 Ago","2014 Set","2014 Out","2014 Nov","2014 Dez","2015 Jan","2015 Fev","2015 Mar","2015 Abr","2015 Mai","2015 Jun","2015 Jul","2015 Ago","2015 Set","2015 Out","2015 Nov","2015 Dez","2016 Jan","2016 Fev","2016 Mar","2016 Abr","2016 Mai","2016 Jun","2016 Jul","2016 Ago","2016 Set","2016 Out","2016 Nov","2016 Dez","2017 Jan","2017 Fev","2017 Mar","2017 Abr","2017 Mai","2017 Jun","2017 Jul","2017 Ago","2017 Set","2017 Out","2017 Nov","2017 Dez","2018 Jan","2018 Fev","2018 Mar","2018 Abr","2018 Mai","2018 Jun","2018 Jul","2018 Ago","2018 Set","2018 Out","2018 Nov","2018 Dez","2019 Jan","2019 Fev","2019 Mar","2019 Abr","2019 Mai","2019 Jun","2019 Jul","2019 Ago","2019 Set","2019 Out","2019 Nov","2019 Dez","2020 Jan","2020 Fev","2020 Mar","2020 Abr","2020 Mai","2020 Jun","2020 Jul","2020 Ago","2020 Set","2020 Out","2020 Nov","2020 Dez","2021 Jan","2021 Fev","2021 Mar","2021 Abr","2021 Mai","2021 Jun","2021 Jul","2021 Ago","2021 Set","2021 Out","2021 Nov","2021 Dez","2022 Jan","2022 Fev","2022 Mar","2022 Abr","2022 Mai","2022 Jun","2022 Jul","2022 Ago","2022 Set","2022 Out","2022 Nov","2022 Dez","2023 Jan","2023 Fev","2023 Mar","2023 Abr","2023 Mai","2023 Jun","2023 Jul","2023 Ago","2023 Set","2023 Out","2023 Nov","2023 Dez","2024 Jan","2024 Fev","2024 Mar","2024 Abr","2024 Mai","2024 Jun","2024 Jul","2024 Ago","2024 Set","2024 Out","2024 Nov","2024 Dez"],"prec_mensal_flat":[297.0,299.5,155.3,37.8,37.5,11.7,3.7,2.5,5.7,97.0,127.8,115.3,323.6,270.4,302.3,78.3,12.1,12.3,1.2,4.3,18.0,52.4,92.7,170.2,169.6,163.3,126.2,79.2,100.4,22.2,0.3,0.0,43.8,45.6,217.2,151.6,177.3,133.9,161.8,77.1,22.3,45.6,10.5,0.0,32.4,104.2,114.9,138.6,234.7,327.1,212.7,103.2,106.3,16.2,28.5,4.3,49.8,84.3,218.7,144.5,101.1,144.1,109.7,93.3,44.9,2.4,11.2,1.9,20.7,64.5,97.5,76.9,136.1,66.1,131.1,30.9,11.8,11.4,0.0,27.3,19.5,66.0,89.1,67.9,67.9,92.9,79.1,47.4,35.0,1.5,0.0,33.8,14.4,62.6,114.6,160.0,110.7,229.1,127.4,30.3,15.2,3.0,0.0,3.7,34.5,93.6,267.0,89.6,96.1,129.1,109.7,132.0,46.5,3.9,1.6,8.4,17.7,78.4,96.0,142.3,87.7,240.7,129.0,36.0,103.2,0.3,7.4,0.3,1.5,81.2,23.4,63.6,97.0,76.6,111.0,51.9,3.7,16.8,0.0,0.6,40.2,96.1,251.4,267.8,202.7,177.7,205.2,27.9,2.5,63.0,5.3,30.4,33.9,95.5,66.6,127.7,230.3,141.5,173.9,108.3,29.5,15.6,0.0,10.2,16.8,45.9,56.7,125.2,113.8,82.5,138.6,82.5,12.7,0.0,1.6,0.0,6.9,68.5,111.0,140.1],"tmax_mensal_flat":[32.6,32.2,32.7,32.3,34.4,36.5,37.4,39.6,42.5,40.1,37.5,36.5,32.0,30.7,30.5,30.3,30.4,33.8,36.9,41.1,41.0,39.7,40.0,38.7,34.4,36.0,33.1,33.3,34.1,34.0,37.3,39.9,42.3,42.2,38.3,33.8,33.1,32.3,35.4,33.5,34.2,34.9,37.2,39.9,41.3,38.6,38.2,35.9,33.9,30.6,31.2,31.4,29.6,29.8,34.6,39.7,41.5,43.1,38.3,32.5,35.5,35.0,35.5,34.1,34.4,34.8,38.5,42.0,43.0,44.6,39.4,37.9,37.7,37.5,37.0,37.8,37.7,37.4,38.2,41.1,41.8,41.3,40.2,37.7,39.1,36.2,36.7,36.4,36.9,36.6,37.9,40.3,41.8,42.4,38.0,34.8,37.8,35.4,32.6,35.6,36.4,36.4,37.5,39.8,41.7,38.8,35.5,34.2,38.7,37.8,34.5,33.3,35.0,36.5,38.1,40.2,43.1,41.4,39.8,35.8,40.1,37.9,35.9,35.8,36.4,36.1,37.6,42.3,43.8,43.9,42.1,40.5,38.8,39.5,37.2,36.3,37.3,37.2,38.0,40.8,42.3,41.3,36.7,32.9,32.2,31.4,30.7,33.1,34.6,35.4,37.2,38.9,40.9,40.2,39.9,38.1,35.4,31.4,32.1,32.6,35.0,35.5,38.2,41.0,43.9,45.0,44.2,42.2,38.2,40.0,39.8,36.5,37.9,37.9,38.3,41.6,43.2,43.5,38.8,36.5],"p95_prec":248.0,"p10_prec":5.5,"p90_tmax":42.1,"hi_mensal_flat":[49.8,48.2,49.6,46.0,47.4,48.2,45.5,40.5,43.7,60.9,57.4,54.3,46.4,42.6,42.4,40.9,40.1,45.1,47.2,42.3,42.1,56.9,59.9,63.9,53.7,59.8,48.1,47.4,48.1,45.5,46.3,40.8,43.6,64.0,64.2,51.6,49.2,46.8,56.5,48.8,45.5,47.3,45.1,40.7,54.5,58.2,63.7,57.1,50.3,41.9,44.4,45.1,38.5,38.6,48.6,52.5,58.1,66.8,65.1,48.6,54.3,53.3,55.2,50.7,48.9,43.5,50.0,43.1,44.4,66.0,61.9,56.8,63.9,58.0,58.8,55.5,49.6,45.4,38.9,42.3,55.7,59.4,65.3,57.7,62.7,55.9,56.7,55.4,53.6,44.2,38.7,50.4,42.9,64.7,58.8,53.1,63.0,59.6,48.8,54.4,48.9,45.4,42.4,40.8,54.1,60.6,58.5,50.7,63.8,62.2,51.6,49.4,51.0,45.8,38.9,41.1,44.4,59.7,63.7,54.6,65.5,69.1,55.3,50.6,52.1,45.4,38.5,43.4,45.1,66.4,59.6,62.9,63.8,61.8,58.0,50.6,46.6,44.9,38.7,41.7,43.6,65.2,65.2,50.7,46.7,44.4,42.0,47.9,44.0,47.9,45.6,47.9,52.8,63.9,53.8,61.1,59.1,43.9,46.4,46.4,48.4,43.5,39.1,42.0,45.3,46.6,65.4,61.7,60.4,64.2,67.4,58.7,50.1,38.8,39.2,42.6,44.4,66.0,62.7,55.8],"aod_mensal_flat":[0.33,0.3,0.24,0.15,0.16,0.16,0.18,0.57,1.14,0.51,0.29,0.27,0.31,0.44,0.28,0.14,0.15,0.16,0.15,0.22,0.4,0.31,0.18,0.26,0.26,0.25,0.17,0.17,0.14,0.17,0.12,0.16,0.51,0.39,0.34,0.27,0.25,0.27,0.23,0.19,0.22,0.21,0.16,0.15,0.32,0.32,0.23,0.28,0.3,0.35,0.28,0.17,0.21,0.21,0.23,0.25,0.41,0.39,0.31,0.33,0.21,0.3,0.19,0.18,0.19,0.16,0.2,0.21,0.57,0.48,0.4,0.35,0.35,0.22,0.24,0.13,0.22,0.23,0.13,0.36,0.48,0.32,0.32,0.3,0.28,0.3,0.21,0.2,0.19,0.14,0.1,0.27,0.48,0.39,0.28,0.31,0.28,0.29,0.26,0.18,0.13,0.27,0.13,0.24,0.33,0.33,0.35,0.23,0.22,0.25,0.21,0.21,0.17,0.16,0.15,0.39,0.59,0.28,0.24,0.31,0.26,0.31,0.15,0.14,0.15,0.22,0.16,0.42,0.77,0.7,0.21,0.23,0.31,0.23,0.21,0.15,0.19,0.22,0.13,0.31,0.44,0.36,0.3,0.25,0.24,0.31,0.31,0.18,0.19,0.21,0.14,0.31,0.8,0.38,0.23,0.27,0.24,0.25,0.24,0.2,0.21,0.17,0.15,0.36,0.36,0.42,0.46,0.23,0.2,0.25,0.24,0.17,0.18,0.17,0.2,0.47,1.48,0.75,0.3,0.24],"umid_mensal_flat":[86.0,86.4,85.2,81.0,68.5,57.0,47.5,32.7,33.8,57.3,66.2,67.1,84.9,87.7,89.2,86.8,83.9,68.1,53.5,38.2,38.6,54.2,56.9,68.1,80.0,78.2,79.2,76.6,71.6,67.4,49.7,32.9,37.3,51.9,70.4,80.3,81.0,82.5,77.4,77.9,66.0,64.9,47.8,31.0,43.9,61.3,70.3,74.9,77.6,87.0,87.7,86.8,88.0,85.1,69.6,48.2,47.9,51.0,71.3,85.4,73.6,74.5,74.5,76.5,71.6,58.2,49.8,31.2,38.6,44.5,62.1,63.1,73.2,66.7,70.8,61.7,53.1,47.2,33.0,37.1,43.6,50.1,62.1,65.5,64.4,71.3,69.8,69.6,63.9,49.0,34.5,42.2,33.9,51.8,65.5,76.1,71.9,82.0,84.5,73.0,59.3,52.8,40.4,38.5,41.6,63.3,79.6,75.8,67.9,70.6,75.2,80.0,71.1,52.6,38.8,34.6,35.9,50.1,62.1,71.7,62.6,78.4,72.6,65.4,64.6,54.0,38.2,31.5,30.8,47.4,47.0,58.0,67.3,61.6,68.7,62.4,49.9,47.1,30.1,31.5,38.5,56.9,80.9,85.9,83.7,85.5,86.0,78.9,60.2,63.1,48.5,44.6,43.2,60.6,49.0,67.6,81.1,84.0,83.9,79.9,66.2,54.1,37.4,33.6,36.5,39.6,45.5,49.0,66.1,61.6,66.4,73.6,53.0,38.6,35.9,29.1,30.1,48.9,65.8,69.4],"sazonalidade_completa":{"1":{"mes":"Jan","tmax":36.0,"tmax_max":40.1,"tmax_min":32.0,"tmin":21.4,"tmed":27.5,"prec":163.0,"prec_max":324.0,"prec_min":68.0,"prec_d":5.26,"umid":74.8,"hi":57.4,"hi_max":77.4},"2":{"mes":"Fev","tmax":34.9,"tmax_max":40.0,"tmax_min":30.6,"tmin":21.4,"tmed":27.2,"prec":172.0,"prec_max":327.0,"prec_min":66.0,"prec_d":6.08,"umid":77.2,"hi":54.3,"hi_max":79.4},"3":{"mes":"Mar","tmax":34.3,"tmax_max":39.8,"tmax_min":30.5,"tmin":20.0,"tmed":27.0,"prec":152.0,"prec_max":302.0,"prec_min":79.0,"prec_d":4.89,"umid":78.1,"hi":52.3,"hi_max":79.3},"4":{"mes":"Abr","tmax":34.2,"tmax_max":37.8,"tmax_min":30.3,"tmin":17.1,"tmed":26.5,"prec":68.0,"prec_max":132.0,"prec_min":28.0,"prec_d":2.26,"umid":75.3,"hi":50.3,"hi_max":66.0},"5":{"mes":"Mai","tmax":35.0,"tmax_max":37.9,"tmax_min":29.6,"tmin":13.6,"tmed":25.3,"prec":39.0,"prec_max":106.0,"prec_min":2.0,"prec_d":1.26,"umid":66.1,"hi":48.2,"hi_max":59.0},"6":{"mes":"Jun","tmax":35.5,"tmax_max":37.9,"tmax_min":29.8,"tmin":13.4,"tmed":25.4,"prec":15.0,"prec_max":63.0,"prec_min":0.0,"prec_d":0.5,"umid":57.3,"hi":45.2,"hi_max":52.8},"7":{"mes":"Jul","tmax":37.5,"tmax_max":38.5,"tmax_min":34.6,"tmin":12.2,"tmed":25.7,"prec":5.0,"prec_max":28.0,"prec_min":0.0,"prec_d":0.15,"umid":43.6,"hi":43.9,"hi_max":46.4},"8":{"mes":"Ago","tmax":40.5,"tmax_max":42.3,"tmax_min":38.9,"tmin":14.0,"tmed":28.1,"prec":9.0,"prec_max":34.0,"prec_min":0.0,"prec_d":0.27,"umid":35.8,"hi":41.5,"hi_max":43.5},"9":{"mes":"Set","tmax":42.3,"tmax_max":43.9,"tmax_min":40.9,"tmin":18.3,"tmed":31.0,"prec":24.0,"prec_max":50.0,"prec_min":2.0,"prec_d":0.79,"umid":38.3,"hi":43.6,"hi_max":45.3},"10":{"mes":"Out","tmax":41.7,"tmax_max":45.0,"tmax_min":38.6,"tmin":19.9,"tmed":30.8,"prec":76.0,"prec_max":104.0,"prec_min":46.0,"prec_d":2.44,"umid":52.6,"hi":62.8,"hi_max":76.3},"11":{"mes":"Nov","tmax":39.1,"tmax_max":44.2,"tmax_min":35.5,"tmin":20.1,"tmed":29.1,"prec":130.0,"prec_max":267.0,"prec_min":23.0,"prec_d":4.32,"umid":63.7,"hi":62.1,"hi_max":86.3},"12":{"mes":"Dez","tmax":36.5,"tmax_max":42.2,"tmax_min":32.5,"tmin":21.7,"tmed":28.4,"prec":132.0,"prec_max":268.0,"prec_min":64.0,"prec_d":4.26,"umid":70.5,"hi":56.5,"hi_max":84.0}},"saude_mensal":{"ANIMAIS_PECONHENTOS":[2,4,1,3,1,null,1,null,null,1,2,1,1,6,3,3,2,3,1,null,null,3,6,3,4,2,2,5,2,1,null,null,1,3,5,1,null,3,5,3,1,2,3,null,5,3,3,7,2,5,1,6,1,1,1,1,2,2,2,2,5,3,1,4,4,5,1,null,1,3,1,2,2,1,2,1,4,2,1,null,null,null,2,2,null,null,4,6,5,null,null,4,1,2,1,4,6,3,5,2,6,2,6,6,1,1,4,5,9,null,8,12,4,6,2,7,4,3,2,null,6,6,5,5,1,3,null,4,1,1,2,2,null,null,3,3,1,1,null,null,null,1,2,1,null,null,2,1,null,1,null,1,2,1,2,null,2,2,7,1,1,3,1,null,1,null,null,4,2,4,3,1,3,2,2,2,2,1,5,3],"ASMA":[1,1,2,2,2,null,1,null,null,null,null,3,1,null,2,null,null,1,null,null,2,1,null,1,1,null,2,1,1,1,null,null,1,null,null,1,1,1,null,null,null,null,null,null,null,1,1,null,null,null,2,3,1,null,null,null,1,null,null,null,1,null,1,null,2,2,1,3,1,null,1,1,null,null,2,null,null,1,1,2,3,null,1,null,null,null,null,2,null,1,null,null,null,1,1,null,null,null,null,1,null,null,null,2,3,null,null,null,1,null,2,null,null,1,1,2,4,null,null,null,1,null,null,null,null,null,null,null,null,null,null,1,null,null,null,null,3,null,1,1,null,null,2,1,1,null,null,1,1,null,null,2,null,null,2,1,1,4,1,null,1,2,2,3,4,null,null,1,1,1,2,null,null,null,2,1,2,null,1,1],"CARDIOVASCULAR":[70,89,83,85,100,83,88,96,93,87,94,117,76,74,81,85,86,95,89,80,67,80,60,88,93,88,98,107,85,63,80,86,78,79,93,85,87,93,78,69,73,82,88,82,91,93,87,71,86,84,89,84,94,78,95,115,85,90,77,68,87,59,73,52,62,69,78,86,74,38,66,59,53,59,54,75,69,80,83,84,81,67,76,74,66,58,61,61,88,65,87,102,96,85,57,82,108,86,82,100,87,111,147,94,102,93,106,91,94,88,68,105,108,81,91,101,76,103,85,97,99,92,76,54,47,42,44,86,77,46,71,84,67,70,68,58,80,78,82,73,89,84,71,80,67,62,39,15,45,35,86,79,72,73,84,58,66,87,86,55,80,69,81,47,62,55,56,61,42,50,65,60,62,71,88,98,79,91,100,88],"CAUSAS_EXTERNAS":[46,59,66,44,85,72,66,80,102,118,127,135,96,93,97,86,96,138,102,84,132,152,206,276,235,226,233,232,223,215,228,190,167,226,256,290,238,205,224,200,269,232,215,174,220,223,258,312,270,285,267,267,239,260,255,300,259,276,268,258,249,231,219,212,256,250,230,234,217,245,267,252,220,221,243,182,192,191,161,196,198,219,175,213,231,173,251,222,211,212,238,226,232,98,65,84,70,61,36,73,153,127,197,219,182,187,206,207,203,159,175,217,221,227,224,211,224,197,200,201,193,159,174,138,157,142,157,175,146,172,184,177,183,161,153,156,197,184,169,202,187,235,197,204,177,153,161,108,178,199,183,180,138,193,178,163,167,158,175,163,196,171,178,194,166,160,165,200,166,191,176,171,193,182,157,197,177,196,172,173],"DENGUE":[68,28,14,6,2,1,1,2,2,null,2,1,2,1,1,null,null,null,null,null,null,1,null,null,null,7,8,3,9,1,3,2,3,3,3,4,15,5,2,7,1,null,1,null,1,1,2,null,2,1,5,2,3,null,1,null,null,null,null,1,1,2,null,1,null,null,1,1,null,null,null,1,null,null,null,null,null,null,1,null,null,null,null,2,1,null,null,3,1,null,null,null,null,null,null,1,2,null,1,2,null,null,null,2,null,null,null,null,null,1,null,null,2,null,2,null,null,2,1,2,16,15,3,3,1,1,1,1,null,2,null,2,1,null,5,1,1,null,null,2,null,null,null,null,null,1,1,1,null,2,2,1,1,null,null,null,1,3,5,3,3,3,1,3,4,2,null,2,1,1,12,7,8,5,null,3,1,2,5,33],"DESNUTRICAO":[5,3,4,1,5,5,3,4,2,1,2,1,null,1,2,4,1,6,2,2,1,2,3,null,2,1,null,1,2,null,4,2,null,null,1,1,null,4,1,2,1,1,2,2,3,1,2,1,1,1,3,1,4,1,1,1,5,2,1,2,null,1,3,2,null,null,null,1,null,null,3,2,2,2,2,1,1,3,1,2,5,1,1,1,2,2,1,null,null,1,null,1,1,1,1,null,null,null,null,null,1,1,1,2,null,1,null,null,2,null,1,null,5,1,3,4,null,2,null,4,1,null,2,null,1,null,null,null,null,1,null,1,null,null,null,null,1,null,null,4,1,2,null,2,null,1,1,null,1,1,2,2,1,2,null,null,1,1,null,null,1,null,3,null,2,1,3,1,4,1,2,6,2,null,1,null,2,1,null,null],"LEISHMANIOSE_MALARIA":[null,1,1,null,null,1,null,null,1,null,1,1,1,null,null,null,null,1,null,1,null,null,null,null,null,null,null,1,null,1,2,null,null,1,null,null,5,1,null,null,null,1,null,null,null,1,null,null,null,null,null,null,null,null,null,null,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,null,null,null,null,null,null,2,null,1,1,1,1,null,1,null,null,2,1,null,null,null,null,null,null,1,null,null,null,null,null,1,null,1,null,2,1,null,null,null,null,3,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2,null,1,null,1,null,2,null,null,1,1,1,null,null,null,null,null,null,null,null,1,1,null,null,null,null,null,null,null,null,null,null,null,null,null,2,null,3,null,null,null,1,1,2,null,null,null,null,null],"NEOPLASIAS":[10,9,10,18,18,13,14,10,22,17,11,11,13,10,9,15,14,39,29,25,10,14,16,27,24,28,28,26,34,54,76,50,33,38,45,24,40,35,46,51,69,55,114,101,79,77,48,36,66,60,68,57,31,70,71,62,62,74,80,37,64,41,74,66,69,66,89,60,55,43,85,60,46,83,83,64,64,54,58,56,51,81,79,50,73,60,75,72,86,73,77,73,74,66,33,38,38,39,47,43,57,62,40,52,52,44,39,41,43,50,37,60,82,51,65,50,56,89,54,46,45,42,53,24,26,29,21,44,25,32,40,41,41,26,33,29,23,32,41,36,53,62,62,64,63,59,63,33,52,60,64,75,59,73,75,58,53,53,80,56,65,76,66,52,49,38,43,58,55,42,41,56,47,57,73,46,50,76,54,38],"PNEUMONIA":[33,32,33,31,29,29,35,42,35,40,36,27,18,10,16,35,34,13,14,19,22,43,35,45,50,36,36,68,70,79,62,44,46,43,33,41,39,32,50,107,66,42,23,25,23,39,44,41,35,34,44,59,51,63,42,35,42,55,41,50,42,36,49,51,62,40,33,33,55,36,33,35,38,20,39,73,73,62,74,48,57,55,51,55,55,34,57,59,55,59,54,51,34,47,19,28,22,40,54,51,36,44,40,44,29,40,28,27,25,19,47,43,60,61,37,51,43,35,29,37,24,26,23,40,20,5,1,4,3,10,5,8,11,7,11,8,16,10,12,14,13,18,14,20,33,14,43,36,49,45,29,42,39,49,36,30,52,59,54,56,65,51,39,41,26,28,31,50,16,22,30,58,73,53,50,51,70,63,37,41],"RENAL_URINARIO":[43,53,62,51,61,55,68,65,47,82,47,60,58,71,54,58,70,67,61,62,63,57,66,81,74,70,69,83,70,92,93,80,97,87,92,83,75,62,90,71,85,56,63,62,63,73,78,82,62,64,102,101,80,57,113,86,90,111,94,84,87,66,127,93,88,103,128,116,100,72,67,110,115,108,136,126,122,112,118,137,109,103,88,90,102,96,104,95,116,109,101,120,111,98,97,80,83,85,81,89,71,83,87,98,89,107,97,81,80,78,104,69,89,60,83,77,52,90,98,86,98,86,85,59,54,41,30,45,70,52,61,68,66,54,46,38,38,52,60,78,85,113,92,88,72,85,73,38,67,58,99,98,92,109,105,103,107,105,135,121,127,118,133,112,145,133,121,113,108,72,89,113,104,150,125,172,155,167,142,109],"RESPIRATORIO":[52,52,61,56,49,52,57,64,55,66,66,78,37,17,35,37,66,47,32,60,37,51,58,71,63,46,49,86,100,154,95,87,77,102,57,66,63,57,85,148,119,93,53,57,50,68,70,69,67,64,71,98,86,91,85,64,71,77,64,76,73,57,73,77,89,75,52,54,80,49,51,65,70,39,65,103,99,94,114,69,74,80,75,83,86,54,83,83,79,83,81,68,61,76,51,55,41,59,90,84,72,82,61,72,55,67,60,57,54,38,76,81,98,85,62,92,78,68,53,67,56,52,58,65,39,31,58,74,54,30,26,25,26,14,19,34,46,34,25,30,25,33,32,40,50,26,54,53,89,62,53,70,57,81,64,55,76,87,100,81,91,94,80,82,52,50,61,77,38,38,59,111,110,100,79,80,97,99,68,69],"TRANSTORNOS_MENTAIS":[null,null,null,null,null,null,null,null,null,null,null,null,1,null,2,2,1,null,1,null,null,2,2,null,1,1,4,null,2,3,3,4,3,null,null,null,1,null,2,1,7,4,3,null,4,1,3,2,1,1,null,1,1,4,null,3,null,1,2,null,1,2,1,4,1,1,2,1,null,2,1,1,1,null,4,null,1,3,1,3,null,1,1,4,null,1,4,3,7,3,4,1,1,2,6,null,null,1,1,3,1,1,3,3,3,3,1,1,3,null,2,3,6,4,2,4,null,5,2,4,2,1,2,null,1,1,null,3,3,2,2,2,1,1,1,3,2,3,null,3,1,7,1,3,null,1,null,1,2,null,null,null,1,1,2,1,null,null,null,1,2,null,1,3,null,3,null,null,1,null,3,null,null,null,3,null,1,1,1,1],"DIARREICAS_GASTROENTERITES":[14,11,9,10,6,10,9,12,15,13,11,7,2,5,1,3,2,3,7,3,5,10,17,18,15,6,8,5,10,1,2,8,5,5,3,4,5,3,8,4,4,2,5,1,3,7,8,8,1,2,7,6,7,7,null,10,7,6,5,2,null,3,3,5,4,6,3,4,1,3,1,2,8,6,8,2,5,5,7,4,2,2,5,2,7,2,2,3,2,6,3,3,1,6,9,1,4,2,7,6,3,6,5,3,9,6,1,5,2,3,4,7,2,3,2,8,6,3,null,6,6,1,3,1,3,3,3,2,2,null,5,2,5,5,3,3,5,3,1,3,3,1,3,4,2,5,4,null,4,2,1,5,2,4,4,3,3,4,6,1,2,1,1,5,3,3,3,2,4,6,4,3,5,5,5,4,4,1,3,5],"DPOC":[7,8,11,8,4,9,3,7,10,11,7,6,6,1,3,1,4,3,null,3,5,1,1,1,null,1,1,1,3,7,4,6,2,4,6,4,null,3,6,2,2,1,3,4,5,5,2,2,2,8,8,6,3,5,9,7,3,5,3,2,1,4,4,1,9,11,3,1,4,1,2,4,3,1,1,2,3,1,7,2,1,null,3,2,3,2,5,4,3,3,4,1,3,1,2,3,4,4,9,7,10,5,2,1,3,8,null,2,4,3,6,11,6,5,7,16,15,15,7,8,8,6,1,1,1,1,1,1,null,null,1,1,1,null,1,4,4,2,1,1,1,1,3,6,4,1,3,3,13,3,4,8,8,11,3,1,3,9,18,12,15,13,11,10,4,6,5,7,2,2,9,8,11,11,8,6,8,9,11,7]},"correlacoes_mensais":[{"grupo":"ANIMAIS_PECONHENTOS","var":"umid","r":0.163,"r2":0.026,"p":0.04899,"n":147,"slope":0.02,"intercept":1.6,"sig":"*"},{"grupo":"DENGUE","var":"prec","r":0.369,"r2":0.136,"p":9e-05,"n":108,"slope":0.0358,"intercept":0.78,"sig":"***"},{"grupo":"DENGUE","var":"umid","r":0.24,"r2":0.058,"p":0.01231,"n":108,"slope":0.1091,"intercept":-2.9,"sig":"*"},{"grupo":"NEOPLASIAS","var":"tmax","r":0.151,"r2":0.023,"p":0.04255,"n":180,"slope":0.9025,"intercept":15.74,"sig":"*"},{"grupo":"NEOPLASIAS","var":"prec","r":-0.185,"r2":0.034,"p":0.01275,"n":180,"slope":-0.0505,"intercept":53.54,"sig":"*"},{"grupo":"NEOPLASIAS","var":"umid","r":-0.164,"r2":0.027,"p":0.02748,"n":180,"slope":-0.2035,"intercept":61.84,"sig":"*"},{"grupo":"RENAL_URINARIO","var":"tmax","r":0.269,"r2":0.072,"p":0.00026,"n":180,"slope":2.0218,"intercept":11.57,"sig":"***"},{"grupo":"RENAL_URINARIO","var":"umid","r":-0.199,"r2":0.04,"p":0.00745,"n":180,"slope":-0.3105,"intercept":105.95,"sig":"**"},{"grupo":"RESPIRATORIO","var":"prec","r":-0.231,"r2":0.053,"p":0.00185,"n":180,"slope":-0.068,"intercept":71.54,"sig":"**"},{"grupo":"TRANSTORNOS_MENTAIS","var":"prec","r":-0.238,"r2":0.057,"p":0.00785,"n":124,"slope":-0.0045,"intercept":2.56,"sig":"**"}],"grupos_mensais":["ANIMAIS_PECONHENTOS","ASMA","CARDIOVASCULAR","CAUSAS_EXTERNAS","DENGUE","DESNUTRICAO","LEISHMANIOSE_MALARIA","NEOPLASIAS","PNEUMONIA","RENAL_URINARIO","RESPIRATORIO","TRANSTORNOS_MENTAIS"],"nota_mensal":"Meses sem registro no SIH aparecem como null \u2014 n\u00e3o interpolados. Dados: SIH/SUS DATASUS + NASA POWER + NASA MODIS. Munic\u00edpio: C\u00e1ceres-MT.","correlacoes_mensais_dict":{"[Mensal] Umidade (%)||[Mensal] Animais Peconhentos":{"r":0.163,"r2":0.026,"p":0.04899,"slope":0.02,"intercept":1.6,"n":147,"mensal":true,"grupo_raw":"ANIMAIS_PECONHENTOS"},"[Mensal] Precipita\u00e7\u00e3o (mm)||[Mensal] Dengue":{"r":0.369,"r2":0.136,"p":9e-05,"slope":0.0358,"intercept":0.78,"n":108,"mensal":true,"grupo_raw":"DENGUE"},"[Mensal] Umidade (%)||[Mensal] Dengue":{"r":0.24,"r2":0.058,"p":0.01231,"slope":0.1091,"intercept":-2.9,"n":108,"mensal":true,"grupo_raw":"DENGUE"},"[Mensal] T. m\u00e1xima (\u00b0C)||[Mensal] Neoplasias":{"r":0.151,"r2":0.023,"p":0.04255,"slope":0.9025,"intercept":15.74,"n":180,"mensal":true,"grupo_raw":"NEOPLASIAS"},"[Mensal] Precipita\u00e7\u00e3o (mm)||[Mensal] Neoplasias":{"r":-0.185,"r2":0.034,"p":0.01275,"slope":-0.0505,"intercept":53.54,"n":180,"mensal":true,"grupo_raw":"NEOPLASIAS"},"[Mensal] Umidade (%)||[Mensal] Neoplasias":{"r":-0.164,"r2":0.027,"p":0.02748,"slope":-0.2035,"intercept":61.84,"n":180,"mensal":true,"grupo_raw":"NEOPLASIAS"},"[Mensal] T. m\u00e1xima (\u00b0C)||[Mensal] Renal Urinario":{"r":0.269,"r2":0.072,"p":0.00026,"slope":2.0218,"intercept":11.57,"n":180,"mensal":true,"grupo_raw":"RENAL_URINARIO"},"[Mensal] Umidade (%)||[Mensal] Renal Urinario":{"r":-0.199,"r2":0.04,"p":0.00745,"slope":-0.3105,"intercept":105.95,"n":180,"mensal":true,"grupo_raw":"RENAL_URINARIO"},"[Mensal] Precipita\u00e7\u00e3o (mm)||[Mensal] Respiratorio":{"r":-0.231,"r2":0.053,"p":0.00185,"slope":-0.068,"intercept":71.54,"n":180,"mensal":true,"grupo_raw":"RESPIRATORIO"},"[Mensal] Precipita\u00e7\u00e3o (mm)||[Mensal] Transtornos Mentais":{"r":-0.238,"r2":0.057,"p":0.00785,"slope":-0.0045,"intercept":2.56,"n":124,"mensal":true,"grupo_raw":"TRANSTORNOS_MENTAIS"}}};
+const DM = {"labels_m":["2010 Jan","2010 Fev","2010 Mar","2010 Abr","2010 Mai","2010 Jun","2010 Jul","2010 Ago","2010 Set","2010 Out","2010 Nov","2010 Dez","2011 Jan","2011 Fev","2011 Mar","2011 Abr","2011 Mai","2011 Jun","2011 Jul","2011 Ago","2011 Set","2011 Out","2011 Nov","2011 Dez","2012 Jan","2012 Fev","2012 Mar","2012 Abr","2012 Mai","2012 Jun","2012 Jul","2012 Ago","2012 Set","2012 Out","2012 Nov","2012 Dez","2013 Jan","2013 Fev","2013 Mar","2013 Abr","2013 Mai","2013 Jun","2013 Jul","2013 Ago","2013 Set","2013 Out","2013 Nov","2013 Dez","2014 Jan","2014 Fev","2014 Mar","2014 Abr","2014 Mai","2014 Jun","2014 Jul","2014 Ago","2014 Set","2014 Out","2014 Nov","2014 Dez","2015 Jan","2015 Fev","2015 Mar","2015 Abr","2015 Mai","2015 Jun","2015 Jul","2015 Ago","2015 Set","2015 Out","2015 Nov","2015 Dez","2016 Jan","2016 Fev","2016 Mar","2016 Abr","2016 Mai","2016 Jun","2016 Jul","2016 Ago","2016 Set","2016 Out","2016 Nov","2016 Dez","2017 Jan","2017 Fev","2017 Mar","2017 Abr","2017 Mai","2017 Jun","2017 Jul","2017 Ago","2017 Set","2017 Out","2017 Nov","2017 Dez","2018 Jan","2018 Fev","2018 Mar","2018 Abr","2018 Mai","2018 Jun","2018 Jul","2018 Ago","2018 Set","2018 Out","2018 Nov","2018 Dez","2019 Jan","2019 Fev","2019 Mar","2019 Abr","2019 Mai","2019 Jun","2019 Jul","2019 Ago","2019 Set","2019 Out","2019 Nov","2019 Dez","2020 Jan","2020 Fev","2020 Mar","2020 Abr","2020 Mai","2020 Jun","2020 Jul","2020 Ago","2020 Set","2020 Out","2020 Nov","2020 Dez","2021 Jan","2021 Fev","2021 Mar","2021 Abr","2021 Mai","2021 Jun","2021 Jul","2021 Ago","2021 Set","2021 Out","2021 Nov","2021 Dez","2022 Jan","2022 Fev","2022 Mar","2022 Abr","2022 Mai","2022 Jun","2022 Jul","2022 Ago","2022 Set","2022 Out","2022 Nov","2022 Dez","2023 Jan","2023 Fev","2023 Mar","2023 Abr","2023 Mai","2023 Jun","2023 Jul","2023 Ago","2023 Set","2023 Out","2023 Nov","2023 Dez","2024 Jan","2024 Fev","2024 Mar","2024 Abr","2024 Mai","2024 Jun","2024 Jul","2024 Ago","2024 Set","2024 Out","2024 Nov","2024 Dez"],"anos":[2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024],"meses_nomes":["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],"series_saude_mensal":{"ANIMAIS_PECONHENTOS":[2,4,1,3,1,null,1,null,null,1,2,1,1,6,3,3,2,3,1,null,null,3,6,3,4,2,2,5,2,1,null,null,1,3,5,1,null,3,5,3,1,2,3,null,5,3,3,7,2,5,1,6,1,1,1,1,2,2,2,2,5,3,1,4,4,5,1,null,1,3,1,2,2,1,2,1,4,2,1,null,null,null,2,2,null,null,4,6,5,null,null,4,1,2,1,4,6,3,5,2,6,2,6,6,1,1,4,5,9,null,8,12,4,6,2,7,4,3,2,null,6,6,5,5,1,3,null,4,1,1,2,2,null,null,3,3,1,1,null,null,null,1,2,1,null,null,2,1,null,1,null,1,2,1,2,null,2,2,7,1,1,3,1,null,1,null,null,4,2,4,3,1,3,2,2,2,2,1,5,3],"ASMA":[1,1,2,2,2,null,1,null,null,null,null,3,1,null,2,null,null,1,null,null,2,1,null,1,1,null,2,1,1,1,null,null,1,null,null,1,1,1,null,null,null,null,null,null,null,1,1,null,null,null,2,3,1,null,null,null,1,null,null,null,1,null,1,null,2,2,1,3,1,null,1,1,null,null,2,null,null,1,1,2,3,null,1,null,null,null,null,2,null,1,null,null,null,1,1,null,null,null,null,1,null,null,null,2,3,null,null,null,1,null,2,null,null,1,1,2,4,null,null,null,1,null,null,null,null,null,null,null,null,null,null,1,null,null,null,null,3,null,1,1,null,null,2,1,1,null,null,1,1,null,null,2,null,null,2,1,1,4,1,null,1,2,2,3,4,null,null,1,1,1,2,null,null,null,2,1,2,null,1,1],"CARDIOVASCULAR":[70,89,83,85,100,83,88,96,93,87,94,117,76,74,81,85,86,95,89,80,67,80,60,88,93,88,98,107,85,63,80,86,78,79,93,85,87,93,78,69,73,82,88,82,91,93,87,71,86,84,89,84,94,78,95,115,85,90,77,68,87,59,73,52,62,69,78,86,74,38,66,59,53,59,54,75,69,80,83,84,81,67,76,74,66,58,61,61,88,65,87,102,96,85,57,82,108,86,82,100,87,111,147,94,102,93,106,91,94,88,68,105,108,81,91,101,76,103,85,97,99,92,76,54,47,42,44,86,77,46,71,84,67,70,68,58,80,78,82,73,89,84,71,80,67,62,39,15,45,35,86,79,72,73,84,58,66,87,86,55,80,69,81,47,62,55,56,61,42,50,65,60,62,71,88,98,79,91,100,88],"CAUSAS_EXTERNAS":[46,59,66,44,85,72,66,80,102,118,127,135,96,93,97,86,96,138,102,84,132,152,206,276,235,226,233,232,223,215,228,190,167,226,256,290,238,205,224,200,269,232,215,174,220,223,258,312,270,285,267,267,239,260,255,300,259,276,268,258,249,231,219,212,256,250,230,234,217,245,267,252,220,221,243,182,192,191,161,196,198,219,175,213,231,173,251,222,211,212,238,226,232,98,65,84,70,61,36,73,153,127,197,219,182,187,206,207,203,159,175,217,221,227,224,211,224,197,200,201,193,159,174,138,157,142,157,175,146,172,184,177,183,161,153,156,197,184,169,202,187,235,197,204,177,153,161,108,178,199,183,180,138,193,178,163,167,158,175,163,196,171,178,194,166,160,165,200,166,191,176,171,193,182,157,197,177,196,172,173],"DENGUE":[68,28,14,6,2,1,1,2,2,null,2,1,2,1,1,null,null,null,null,null,null,1,null,null,null,7,8,3,9,1,3,2,3,3,3,4,15,5,2,7,1,null,1,null,1,1,2,null,2,1,5,2,3,null,1,null,null,null,null,1,1,2,null,1,null,null,1,1,null,null,null,1,null,null,null,null,null,null,1,null,null,null,null,2,1,null,null,3,1,null,null,null,null,null,null,1,2,null,1,2,null,null,null,2,null,null,null,null,null,1,null,null,2,null,2,null,null,2,1,2,16,15,3,3,1,1,1,1,null,2,null,2,1,null,5,1,1,null,null,2,null,null,null,null,null,1,1,1,null,2,2,1,1,null,null,null,1,3,5,3,3,3,1,3,4,2,null,2,1,1,12,7,8,5,null,3,1,2,5,33],"DESNUTRICAO":[5,3,4,1,5,5,3,4,2,1,2,1,null,1,2,4,1,6,2,2,1,2,3,null,2,1,null,1,2,null,4,2,null,null,1,1,null,4,1,2,1,1,2,2,3,1,2,1,1,1,3,1,4,1,1,1,5,2,1,2,null,1,3,2,null,null,null,1,null,null,3,2,2,2,2,1,1,3,1,2,5,1,1,1,2,2,1,null,null,1,null,1,1,1,1,null,null,null,null,null,1,1,1,2,null,1,null,null,2,null,1,null,5,1,3,4,null,2,null,4,1,null,2,null,1,null,null,null,null,1,null,1,null,null,null,null,1,null,null,4,1,2,null,2,null,1,1,null,1,1,2,2,1,2,null,null,1,1,null,null,1,null,3,null,2,1,3,1,4,1,2,6,2,null,1,null,2,1,null,null],"LEISHMANIOSE_MALARIA":[null,1,1,null,null,1,null,null,1,null,1,1,1,null,null,null,null,1,null,1,null,null,null,null,null,null,null,1,null,1,2,null,null,1,null,null,5,1,null,null,null,1,null,null,null,1,null,null,null,null,null,null,null,null,null,null,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1,null,null,null,null,null,null,2,null,1,1,1,1,null,1,null,null,2,1,null,null,null,null,null,null,1,null,null,null,null,null,1,null,1,null,2,1,null,null,null,null,3,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2,null,1,null,1,null,2,null,null,1,1,1,null,null,null,null,null,null,null,null,1,1,null,null,null,null,null,null,null,null,null,null,null,null,null,2,null,3,null,null,null,1,1,2,null,null,null,null,null],"NEOPLASIAS":[10,9,10,18,18,13,14,10,22,17,11,11,13,10,9,15,14,39,29,25,10,14,16,27,24,28,28,26,34,54,76,50,33,38,45,24,40,35,46,51,69,55,114,101,79,77,48,36,66,60,68,57,31,70,71,62,62,74,80,37,64,41,74,66,69,66,89,60,55,43,85,60,46,83,83,64,64,54,58,56,51,81,79,50,73,60,75,72,86,73,77,73,74,66,33,38,38,39,47,43,57,62,40,52,52,44,39,41,43,50,37,60,82,51,65,50,56,89,54,46,45,42,53,24,26,29,21,44,25,32,40,41,41,26,33,29,23,32,41,36,53,62,62,64,63,59,63,33,52,60,64,75,59,73,75,58,53,53,80,56,65,76,66,52,49,38,43,58,55,42,41,56,47,57,73,46,50,76,54,38],"PNEUMONIA":[33,32,33,31,29,29,35,42,35,40,36,27,18,10,16,35,34,13,14,19,22,43,35,45,50,36,36,68,70,79,62,44,46,43,33,41,39,32,50,107,66,42,23,25,23,39,44,41,35,34,44,59,51,63,42,35,42,55,41,50,42,36,49,51,62,40,33,33,55,36,33,35,38,20,39,73,73,62,74,48,57,55,51,55,55,34,57,59,55,59,54,51,34,47,19,28,22,40,54,51,36,44,40,44,29,40,28,27,25,19,47,43,60,61,37,51,43,35,29,37,24,26,23,40,20,5,1,4,3,10,5,8,11,7,11,8,16,10,12,14,13,18,14,20,33,14,43,36,49,45,29,42,39,49,36,30,52,59,54,56,65,51,39,41,26,28,31,50,16,22,30,58,73,53,50,51,70,63,37,41],"RENAL_URINARIO":[43,53,62,51,61,55,68,65,47,82,47,60,58,71,54,58,70,67,61,62,63,57,66,81,74,70,69,83,70,92,93,80,97,87,92,83,75,62,90,71,85,56,63,62,63,73,78,82,62,64,102,101,80,57,113,86,90,111,94,84,87,66,127,93,88,103,128,116,100,72,67,110,115,108,136,126,122,112,118,137,109,103,88,90,102,96,104,95,116,109,101,120,111,98,97,80,83,85,81,89,71,83,87,98,89,107,97,81,80,78,104,69,89,60,83,77,52,90,98,86,98,86,85,59,54,41,30,45,70,52,61,68,66,54,46,38,38,52,60,78,85,113,92,88,72,85,73,38,67,58,99,98,92,109,105,103,107,105,135,121,127,118,133,112,145,133,121,113,108,72,89,113,104,150,125,172,155,167,142,109],"RESPIRATORIO":[52,52,61,56,49,52,57,64,55,66,66,78,37,17,35,37,66,47,32,60,37,51,58,71,63,46,49,86,100,154,95,87,77,102,57,66,63,57,85,148,119,93,53,57,50,68,70,69,67,64,71,98,86,91,85,64,71,77,64,76,73,57,73,77,89,75,52,54,80,49,51,65,70,39,65,103,99,94,114,69,74,80,75,83,86,54,83,83,79,83,81,68,61,76,51,55,41,59,90,84,72,82,61,72,55,67,60,57,54,38,76,81,98,85,62,92,78,68,53,67,56,52,58,65,39,31,58,74,54,30,26,25,26,14,19,34,46,34,25,30,25,33,32,40,50,26,54,53,89,62,53,70,57,81,64,55,76,87,100,81,91,94,80,82,52,50,61,77,38,38,59,111,110,100,79,80,97,99,68,69],"TRANSTORNOS_MENTAIS":[null,null,null,null,null,null,null,null,null,null,null,null,1,null,2,2,1,null,1,null,null,2,2,null,1,1,4,null,2,3,3,4,3,null,null,null,1,null,2,1,7,4,3,null,4,1,3,2,1,1,null,1,1,4,null,3,null,1,2,null,1,2,1,4,1,1,2,1,null,2,1,1,1,null,4,null,1,3,1,3,null,1,1,4,null,1,4,3,7,3,4,1,1,2,6,null,null,1,1,3,1,1,3,3,3,3,1,1,3,null,2,3,6,4,2,4,null,5,2,4,2,1,2,null,1,1,null,3,3,2,2,2,1,1,1,3,2,3,null,3,1,7,1,3,null,1,null,1,2,null,null,null,1,1,2,1,null,null,null,1,2,null,1,3,null,3,null,null,1,null,3,null,null,null,3,null,1,1,1,1],"DIARREICAS_GASTROENTERITES":[14,11,9,10,6,10,9,12,15,13,11,7,2,5,1,3,2,3,7,3,5,10,17,18,15,6,8,5,10,1,2,8,5,5,3,4,5,3,8,4,4,2,5,1,3,7,8,8,1,2,7,6,7,7,null,10,7,6,5,2,null,3,3,5,4,6,3,4,1,3,1,2,8,6,8,2,5,5,7,4,2,2,5,2,7,2,2,3,2,6,3,3,1,6,9,1,4,2,7,6,3,6,5,3,9,6,1,5,2,3,4,7,2,3,2,8,6,3,null,6,6,1,3,1,3,3,3,2,2,null,5,2,5,5,3,3,5,3,1,3,3,1,3,4,2,5,4,null,4,2,1,5,2,4,4,3,3,4,6,1,2,1,1,5,3,3,3,2,4,6,4,3,5,5,5,4,4,1,3,5],"DPOC":[7,8,11,8,4,9,3,7,10,11,7,6,6,1,3,1,4,3,null,3,5,1,1,1,null,1,1,1,3,7,4,6,2,4,6,4,null,3,6,2,2,1,3,4,5,5,2,2,2,8,8,6,3,5,9,7,3,5,3,2,1,4,4,1,9,11,3,1,4,1,2,4,3,1,1,2,3,1,7,2,1,null,3,2,3,2,5,4,3,3,4,1,3,1,2,3,4,4,9,7,10,5,2,1,3,8,null,2,4,3,6,11,6,5,7,16,15,15,7,8,8,6,1,1,1,1,1,1,null,null,1,1,1,null,1,4,4,2,1,1,1,1,3,6,4,1,3,3,13,3,4,8,8,11,3,1,3,9,18,12,15,13,11,10,4,6,5,7,2,2,9,8,11,11,8,6,8,9,11,7]},"series_clima":{"tmax":[32.64,32.23,32.71,32.33,34.4,36.54,37.37,39.62,42.47,40.12,37.48,36.52,31.97,30.7,30.5,30.34,30.37,33.77,36.85,41.12,40.97,39.71,39.96,38.68,34.35,36.0,33.1,33.26,34.15,34.0,37.26,39.93,42.33,42.17,38.29,33.81,33.14,32.34,35.38,33.45,34.21,34.92,37.17,39.88,41.32,38.63,38.21,35.92,33.86,30.59,31.16,31.43,29.56,29.82,34.57,39.68,41.47,43.12,38.32,32.45,35.45,35.05,35.53,34.12,34.37,34.77,38.51,42.0,43.04,44.64,39.38,37.9,37.71,37.54,37.01,37.82,37.71,37.38,38.21,41.15,41.79,41.34,40.19,37.67,39.12,36.23,36.67,36.38,36.92,36.59,37.92,40.29,41.78,42.37,37.96,34.79,37.75,35.36,32.59,35.57,36.35,36.36,37.46,39.79,41.74,38.82,35.48,34.22,38.69,37.82,34.53,33.31,35.0,36.52,38.06,40.17,43.07,41.43,39.81,35.84,40.14,37.85,35.85,35.83,36.38,36.13,37.65,42.26,43.84,43.93,42.14,40.51,38.81,39.47,37.18,36.32,37.32,37.22,38.05,40.77,42.3,41.31,36.68,32.88,32.18,31.4,30.71,33.09,34.63,35.4,37.24,38.85,40.92,40.18,39.9,38.13,35.39,31.42,32.08,32.56,35.04,35.45,38.21,40.99,43.9,44.99,44.2,42.25,38.24,40.03,39.78,36.51,37.9,37.91,38.33,41.65,43.23,43.46,38.84,36.52],"prec":[297.0,299.5,155.3,37.8,37.5,11.7,3.7,2.5,5.7,97.0,127.8,115.3,323.6,270.4,302.3,78.3,12.1,12.3,1.2,4.3,18.0,52.4,92.7,170.2,169.6,163.3,126.2,79.2,100.4,22.2,0.3,0.0,43.8,45.6,217.2,151.6,177.3,133.9,161.8,77.1,22.3,45.6,10.5,0.0,32.4,104.2,114.9,138.6,234.7,327.1,212.7,103.2,106.3,16.2,28.5,4.3,49.8,84.3,218.7,144.5,101.1,144.1,109.7,93.3,44.9,2.4,11.2,1.9,20.7,64.5,97.5,76.9,136.1,66.1,131.1,30.9,11.8,11.4,0.0,27.3,19.5,66.0,89.1,67.9,67.9,92.9,79.1,47.4,35.0,1.5,0.0,33.8,14.4,62.6,114.6,160.0,110.7,229.1,127.4,30.3,15.2,3.0,0.0,3.7,34.5,93.6,267.0,89.6,96.1,129.1,109.7,132.0,46.5,3.9,1.6,8.4,17.7,78.4,96.0,142.3,87.7,240.7,129.0,36.0,103.2,0.3,7.4,0.3,1.5,81.2,23.4,63.6,97.0,76.6,111.0,51.9,3.7,16.8,0.0,0.6,40.2,96.1,251.4,267.8,202.7,177.7,205.2,27.9,2.5,63.0,5.3,30.4,33.9,95.5,66.6,127.7,230.3,141.5,173.9,108.3,29.5,15.6,0.0,10.2,16.8,45.9,56.7,125.2,113.8,82.5,138.6,82.5,12.7,0.0,1.6,0.0,6.9,68.5,111.0,140.1],"umid":[86.04,86.37,85.15,80.97,68.49,56.95,47.47,32.74,33.75,57.31,66.23,67.14,84.87,87.66,89.25,86.84,83.93,68.1,53.46,38.18,38.62,54.22,56.91,68.09,80.01,78.18,79.17,76.59,71.64,67.4,49.7,32.9,37.3,51.93,70.41,80.28,81.05,82.5,77.36,77.87,66.02,64.91,47.79,31.02,43.88,61.26,70.31,74.86,77.64,86.95,87.67,86.75,87.95,85.12,69.61,48.19,47.94,50.99,71.35,85.38,73.61,74.55,74.54,76.5,71.59,58.19,49.82,31.16,38.56,44.52,62.1,63.12,73.23,66.7,70.78,61.72,53.12,47.24,32.96,37.07,43.6,50.06,62.07,65.51,64.37,71.26,69.75,69.56,63.85,49.05,34.51,42.2,33.9,51.8,65.47,76.1,71.92,82.05,84.55,72.96,59.27,52.81,40.35,38.55,41.6,63.34,79.63,75.8,67.92,70.64,75.25,80.05,71.1,52.58,38.79,34.57,35.92,50.13,62.1,71.71,62.58,78.44,72.62,65.39,64.56,53.96,38.19,31.49,30.82,47.43,47.01,57.95,67.29,61.6,68.65,62.36,49.92,47.09,30.14,31.49,38.53,56.87,80.92,85.94,83.71,85.47,86.05,78.89,60.17,63.11,48.46,44.62,43.21,60.62,49.05,67.59,81.12,84.04,83.9,79.94,66.2,54.06,37.39,33.62,36.47,39.6,45.47,48.99,66.08,61.65,66.44,73.58,53.02,38.57,35.87,29.13,30.14,48.88,65.8,69.41],"aod":[0.33,0.3,0.24,0.15,0.16,0.16,0.18,0.57,1.14,0.51,0.29,0.27,0.31,0.44,0.28,0.14,0.15,0.16,0.15,0.22,0.4,0.31,0.18,0.26,0.26,0.25,0.17,0.17,0.14,0.17,0.12,0.16,0.51,0.39,0.34,0.27,0.25,0.27,0.23,0.19,0.22,0.21,0.16,0.15,0.32,0.32,0.23,0.28,0.3,0.35,0.28,0.17,0.21,0.21,0.23,0.25,0.41,0.39,0.31,0.33,0.21,0.3,0.19,0.18,0.19,0.16,0.2,0.21,0.57,0.48,0.4,0.35,0.35,0.22,0.24,0.13,0.22,0.23,0.13,0.36,0.48,0.32,0.32,0.3,0.28,0.3,0.21,0.2,0.19,0.14,0.1,0.27,0.48,0.39,0.28,0.31,0.28,0.29,0.26,0.18,0.13,0.27,0.13,0.24,0.33,0.33,0.35,0.23,0.22,0.25,0.21,0.21,0.17,0.16,0.15,0.39,0.59,0.28,0.24,0.31,0.26,0.31,0.15,0.14,0.15,0.22,0.16,0.42,0.77,0.7,0.21,0.23,0.31,0.23,0.21,0.15,0.19,0.22,0.13,0.31,0.44,0.36,0.3,0.25,0.24,0.31,0.31,0.18,0.19,0.21,0.14,0.31,0.8,0.38,0.23,0.27,0.24,0.25,0.24,0.2,0.21,0.17,0.15,0.36,0.36,0.42,0.46,0.23,0.2,0.25,0.24,0.17,0.18,0.17,0.2,0.47,1.48,0.75,0.3,0.24]},"correlacoes_mensais":[{"grupo":"ANIMAIS_PECONHENTOS","var":"umid","r":0.163,"r2":0.026,"p":0.04899,"n":147,"slope":0.02,"intercept":1.6,"sig":"*"},{"grupo":"DENGUE","var":"prec","r":0.369,"r2":0.136,"p":9e-05,"n":108,"slope":0.0358,"intercept":0.78,"sig":"***"},{"grupo":"DENGUE","var":"umid","r":0.24,"r2":0.058,"p":0.01231,"n":108,"slope":0.1091,"intercept":-2.9,"sig":"*"},{"grupo":"NEOPLASIAS","var":"tmax","r":0.151,"r2":0.023,"p":0.04255,"n":180,"slope":0.9025,"intercept":15.74,"sig":"*"},{"grupo":"NEOPLASIAS","var":"prec","r":-0.185,"r2":0.034,"p":0.01275,"n":180,"slope":-0.0505,"intercept":53.54,"sig":"*"},{"grupo":"NEOPLASIAS","var":"umid","r":-0.164,"r2":0.027,"p":0.02748,"n":180,"slope":-0.2035,"intercept":61.84,"sig":"*"},{"grupo":"RENAL_URINARIO","var":"tmax","r":0.269,"r2":0.072,"p":0.00026,"n":180,"slope":2.0218,"intercept":11.57,"sig":"***"},{"grupo":"RENAL_URINARIO","var":"umid","r":-0.199,"r2":0.04,"p":0.00745,"n":180,"slope":-0.3105,"intercept":105.95,"sig":"**"},{"grupo":"RESPIRATORIO","var":"prec","r":-0.231,"r2":0.053,"p":0.00185,"n":180,"slope":-0.068,"intercept":71.54,"sig":"**"},{"grupo":"TRANSTORNOS_MENTAIS","var":"prec","r":-0.238,"r2":0.057,"p":0.00785,"n":124,"slope":-0.0045,"intercept":2.56,"sig":"**"}],"grupos":["ANIMAIS_PECONHENTOS","ASMA","CARDIOVASCULAR","CAUSAS_EXTERNAS","DENGUE","DESNUTRICAO","LEISHMANIOSE_MALARIA","NEOPLASIAS","PNEUMONIA","RENAL_URINARIO","RESPIRATORIO","TRANSTORNOS_MENTAIS","DIARREICAS_GASTROENTERITES","DPOC"],"nota":"Meses sem registro no SIH aparecem como null \u2014 n\u00e3o interpolados. Dados: SIH/SUS DATASUS + NASA POWER + NASA MODIS. Munic\u00edpio: C\u00e1ceres-MT."};
+
+const ANOS = D.anos, MNM = D.meses_nomes;
+const CH = {};
+const C = {v:'#2e7d32',vcl:'rgba(46,125,50,.2)',az:'#0277bd',azcl:'rgba(2,119,189,.2)',
+  fg:'#d84315',fgcl:'rgba(216,67,21,.2)',rx:'#6a1b9a',am:'#e65100',amcl:'rgba(230,81,0,.2)',ci:'#546e7a'};
+
+function mk(id,cfg,plugins){if(CH[id])CH[id].destroy();const el=document.getElementById(id);if(!el)return;if(plugins)cfg.plugins=(cfg.plugins||[]).concat(plugins);CH[id]=new Chart(el.getContext('2d'),cfg)}
+function bOpt(sc={}){return{responsive:true,maintainAspectRatio:true,animation:false,
+  plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:9}},tooltip:{mode:'index',intersect:false}},
+  scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}}},...sc}}}
+function linReg(x,y){const n=x.length,sx=x.reduce((a,b)=>a+b,0),sy=y.reduce((a,b)=>a+b,0);
+  const sxy=x.reduce((s,v,i)=>s+v*y[i],0),sx2=x.reduce((s,v)=>s+v*v,0);
+  const b=(n*sxy-sx*sy)/(n*sx2-sx*sx),a=(sy-b*sx)/n;return{a,b}}
+function getSigClass(p){return p<=0.05?'sig':p<=0.10?'marg':'ns'}
+function getSigBadge(p){const cl=p<=0.05?'s1':p<=0.10?'s2':'s3';
+  const tx=p<=0.001?'p&lt;0.001':p<=0.01?'p&lt;0.01':p<=0.05?'p&lt;0.05':p<=0.10?'p&lt;0.10':'n.s.';
+  return`<span class="sig-badge ${cl}">${tx}</span>`}
+function statBox(r,p,r2,slope,intercept,n,xl,yl){
+  const sc=getSigClass(p),sg=p<=0.001?'***':p<=0.01?'**':p<=0.05?'*':p<=0.10?'~':'.';
+  const interp=p<=0.05?`Associação <strong>significativa</strong>. ${xl.split('(')[0].trim()} explica ${(r2*100).toFixed(0)}% da variação mensal.`
+    :p<=0.10?`Associação marginal (p=${p.toFixed(3)}). Sinal relevante, n insuficiente para p&lt;0,05.`
+    :`Sem associação linear detectada (p=${p.toFixed(3)}, n=${n}).`;
+  return`<div class="sb"><div class="sb-row">
+    <div class="sb-it"><div class="sb-l">r Pearson</div><div class="sb-v ${sc}">${r>0?'+':''}${r.toFixed(3)}</div></div>
+    <div class="sb-it"><div class="sb-l">r²</div><div class="sb-v ${sc}">${(r2*100).toFixed(1)}%</div></div>
+    <div class="sb-it"><div class="sb-l">p-valor</div><div class="sb-v ${sc}">${p.toFixed(4)}</div></div>
+    <div class="sb-it"><div class="sb-l">Sig.</div><div class="sb-v ${sc}">${sg}</div></div>
+    <div class="sb-it"><div class="sb-l">n meses</div><div class="sb-v ns">${n}</div></div>
+  </div>
+  <div class="sb-txt">${interp}</div>
+  <div class="sb-eq">ŷ = ${slope.toFixed(3)} × X + ${intercept.toFixed(1)}</div></div>`}
+
+function toggleDesc(id){const el=document.getElementById(id);el.classList.toggle('open');
+  el.previousElementSibling.textContent=(el.classList.contains('open')?'▼ ':'▶ ')+'Entenda este gráfico'}
+function togglePerfilDesc(){
+  const body=document.getElementById('gdesc-perfil-body');
+  const btn=body.previousElementSibling;
+  if(body.classList.contains('open')){body.classList.remove('open');btn.textContent='▶ Entenda as faixas de risco e fontes normativas';return;}
+  body.classList.add('open');btn.textContent='▼ Entenda as faixas de risco e fontes normativas';
+  const d=PERFIL_DESCS[perfilVar];if(!d){body.innerHTML='';return;}
+  const swatchHtml=d.faixas.map(f=>`<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><div style="width:14px;height:14px;border-radius:3px;background:${f.cor};flex-shrink:0"></div><span style="font-size:11.5px;color:#1a3a5c">${f.txt}</span></div>`).join('');
+  const fontesHtml=d.fontes.map(f=>`<p style="font-size:11px;color:#2c4a7a;margin:4px 0;padding-left:4px">${f}</p>`).join('');
+  body.innerHTML=`<div class="gdesc-sec"><strong>Faixas de risco — legenda de cores</strong>${swatchHtml}</div><div class="gdesc-sec" style="margin-top:10px"><strong>Fontes normativas e referências</strong>${fontesHtml}</div>${d.limite?`<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#7c3900"><strong>⚠️ Limitação:</strong> ${d.limite}</div>`:''}`;}
+
+function dlChart(cid,fn){const canvas=document.getElementById(cid);if(!canvas)return;const l=document.createElement('a');l.download=fn+'_ERS_Caceres.png';l.href=canvas.toDataURL('image/png',1.0);l.click()}
+function dlCSV(rows,hdr,fn){const bom='\uFEFF',lines=[hdr.join(';'),...rows.map(r=>r.join(';'))];
+  const b=new Blob([bom+lines.join('\n')],{type:'text/csv;charset=utf-8'});const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=fn+'_ERS_Caceres.csv';l.click()}
+function dlSazCSV(){const h=['Mes','Tmax_C','Tmin_C','Tmed_C','Prec_mm','Umid_%','AOD_550nm','SensacaoTermica_C','Categoria'];
+  const rows=MNM.map((m,i)=>{const s=D.sazonalidade[i+1];const hi=D.hi_saz[i];const cat=hiCat(hi);return[m,s.tmax,s.tmin||'',s.tmed||'',s.prec,s.umid,s.aod,hi,cat.lb]});dlCSV(rows,h,'sazonalidade')}
+function dlSerieCSV(){const v=document.getElementById('sel-saz-serie').value;const isD=v.startsWith('d_');
+  const vals=getSerieFlat(v);const labs=D.labels_mensais||LAB_M;const h=['Ano_Mes','Valor'];
+  const rows=labs.map((lb,i)=>[lb,vals[i]!==null&&vals[i]!==undefined?vals[i]:'NA']);dlCSV(rows,h,`serie_${v}`)}
+function dlCompCSV(){const aA=+document.getElementById('sel-ano-a').value,aB=+document.getElementById('sel-ano-b').value;
+  const v=document.getElementById('sel-comp-var').value;const dA=getVarArr(v,aA),dB=getVarArr(v,aB);
+  const h=['Mes',String(aA),String(aB),'Dif_A_B'];const rows=MNM.map((m,i)=>[m,dA[i]?.toFixed(2)||'',dB[i]?.toFixed(2)||'',((dA[i]||0)-(dB[i]||0)).toFixed(2)]);dlCSV(rows,h,`comp_${aA}_${aB}`)}
+function dlHMCSV(){const v=document.getElementById('sel-hm').value;const isD=v.startsWith('d_');const grupo=isD?v.slice(2):'';
+  const h=['Ano',...MNM];const rows=ANOS.map(a=>[a,...getHMDataForYear(v,a).map(x=>x!==null?x:'')]);dlCSV(rows,h,`heatmap_${v}`)}
+function dlTabrCSV(){const h=['X','Y','r','r2','p_valor','Significancia','n'];
+  const rows=Object.entries(D.regressoes).map(([k,v])=>{const[xk,yk]=k.split('||');const sig=v.p<=0.001?'***':v.p<=0.01?'**':v.p<=0.05?'*':v.p<=0.10?'~':'n.s.';return[xk,yk,v.r,v.r2,v.p,sig,v.n]});dlCSV(rows,h,'correlacoes')}
+function dlSazTableCSV(){dlSazCSV()}
+function dlMensalCSV(){const grupo=document.getElementById('sel-men-grupo').value,vk=document.getElementById('sel-men-clima').value;
+  const saude=SAU_MEN[grupo]||[],clima=getClimaFlat(vk),labs=LAB_M.length?LAB_M:D.labels_mensais||[];
+  const h=['Ano_Mes','Internacoes',MNM_MAP[vk]||vk];const rows=labs.map((lb,i)=>[lb,saude[i]!==null&&saude[i]!==undefined?saude[i]:'NA',clima[i]!==null&&clima[i]!==undefined?clima[i]:'NA']);dlCSV(rows,h,`mensal_${grupo}_${vk}_Caceres`)}
+
+function hiCat(v){if(v<27)return{cl:'hi-ok',lb:'Confortável'};if(v<32)return{cl:'hi-cau',lb:'Cautela'};
+  if(v<41)return{cl:'hi-ext',lb:'Cautela extrema'};if(v<54)return{cl:'hi-per',lb:'Perigo'};return{cl:'hi-xper',lb:'Perigo extremo'}}
+
+const sazCfg={
+  tmax:{label:'T. máxima (°C)',unit:'°C',color:v=>{const t=(v-30)/15;return`rgb(${Math.round(255*Math.min(1,t*1.4))},${Math.round(180*Math.max(0,1-t))},50)`}},
+  hi:{label:'Sensação térmica (°C)',unit:'°C HI',color:v=>{const t=Math.min(1,(v-35)/35);return`rgb(${Math.round(255*Math.min(1,t*1.4))},${Math.round(80*Math.max(0,1-t*1.2))},${Math.round(100*(1-t))})`}},
+  prec:{label:'Precipitação (mm)',unit:'mm',color:v=>{const t=Math.min(1,v/200);return`rgb(${Math.round(200*(1-t))},${Math.round(100+100*t)},${Math.round(180+75*t)})`}},
+  aod:{label:'AOD 550nm',unit:'AOD',color:v=>{const t=Math.min(1,v/.65);return`rgb(${Math.round(255*Math.min(1,t*1.6))},${Math.round(200*Math.max(0,1-t*1.2))},50)`}},
+  umid:{label:'Umidade (%)',unit:'%',color:v=>{const t=(v-30)/55;return`rgb(${Math.round(200*(1-t))},${Math.round(100+120*t)},${Math.round(180+75*t)})`}},
+};
+
+function getSazVal(mi,vr){const s=D.sazonalidade[mi+1];if(vr==='hi')return D.hi_saz[mi];return s[vr]}
+let sazVar='tmax',sazMesSel=8;
+
+function setSazVar(v,btn){sazVar=v;document.querySelectorAll('#saz-sel-var .btn').forEach(b=>b.className='btn sec');btn.className='btn prim';renderSazCards();renderSazMain();}
+function renderSazCards(){const cfg=sazCfg[sazVar];
+  document.getElementById('saz-cards').innerHTML=MNM.map((m,i)=>{const v=getSazVal(i,sazVar);const bg=cfg.color(v);const isSel=i===sazMesSel?'sel':'';
+    return`<div class="saz-card ${isSel}" style="background:${bg}" onclick="selectMes(${i})" title="${m}: ${v}${cfg.unit}"><div class="saz-mn">${m}</div><div class="saz-vl">${v<10?v.toFixed(2):Math.round(v)}</div><div class="saz-lb">${cfg.unit}</div></div>`;}).join('');}
+function selectMes(i){sazMesSel=i;renderSazCards();renderSazDetail();const grupo=document.getElementById('sel-saz-doenca')?.value||'';if(grupo)renderSazDoenca();}
+function renderSazMain(){const v=sazVar,cfg=sazCfg[v],data=MNM.map((_,i)=>getSazVal(i,v)),crs=data.map(val=>cfg.color(val));
+  const d=DESCS[v]||{};document.getElementById('saz-main-h3').textContent=d.titulo||cfg.label;document.getElementById('saz-main-sub').textContent=d.sub||'';
+  document.getElementById('gdesc-saz-main-body').innerHTML=descHTML(v);
+  mk('g-saz-main',{type:'bar',data:{labels:MNM,datasets:[{label:cfg.label,data,backgroundColor:crs,borderWidth:0}]},options:{...bOpt(),plugins:{legend:{display:false}},scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}}}}}});}
+function renderSazDetail(){const m=sazMesSel,s=D.sazonalidade[m+1],hi=D.hi_saz[m],cat=hiCat(hi);
+  document.getElementById('saz-detail-h3').textContent=`${MNM[m]} — histórico 2010-2024`;
+  document.getElementById('saz-detail-sub').innerHTML=`T.max=${s.tmax}°C · Chuva=${s.prec}mm · AOD=${s.aod} · Sensação=${hi}°C <span class="hi-cat ${cat.cl}">${cat.lb}</span>`;
+  const vt=ANOS.map(a=>D.tmax_por_ano[a][m]),va=ANOS.map(a=>D.aod_por_ano[a][m]),vh=ANOS.map(a=>{const ha=D.hi_por_ano[String(a)]||D.hi_por_ano[a];return ha?ha[m]:null});
+  mk('g-saz-detail',{type:'bar',data:{labels:ANOS,datasets:[
+    {type:'bar',label:'T. máxima (°C)',data:vt,backgroundColor:vt.map(v=>v>42.1?'rgba(198,40,40,.75)':'rgba(249,168,37,.6)'),yAxisID:'yT',borderWidth:0},
+    {type:'line',label:'AOD 550nm',data:va,borderColor:C.fg,borderWidth:2,yAxisID:'yA',pointRadius:4,tension:.3},
+    {type:'line',label:'Sensação (°C)',data:vh,borderColor:'#880e4f',borderWidth:2,borderDash:[4,2],yAxisID:'yT',pointRadius:3,tension:.3},
+  ]},options:bOpt({yT:{type:'linear',position:'left',title:{display:true,text:'°C',font:{size:10}},ticks:{font:{size:10}}},yA:{type:'linear',position:'right',min:0,max:1.6,title:{display:true,text:'AOD',font:{size:10}},grid:{drawOnChartArea:false},ticks:{font:{size:10}}}})});}
+function renderSazTable(){const SC=D.sazonalidade_completa||{};
+  document.getElementById('saz-table-body').innerHTML=MNM.map((mn,i)=>{const s=D.sazonalidade[i+1],sc=SC[i+1]||{},hi=D.hi_saz[i],cat=hiCat(hi);
+    return`<tr><td><strong>${mn}</strong></td><td>${s.tmax}</td><td>${s.tmin||'—'}</td><td>${s.tmed||'—'}</td><td>${s.prec}</td><td style="color:var(--fg);font-weight:600">${sc.prec_max||'—'}</td><td>${s.umid}</td><td>${s.aod}</td><td><strong>${hi}</strong></td><td><span class="hi-cat ${cat.cl}">${cat.lb}</span></td></tr>`}).join('');}
+
+// SAZONALIDADE DE DOENÇAS
+function renderSazDoenca(){
+  const grupo=document.getElementById('sel-saz-doenca')?.value||'';
+  if(!grupo){
+    const h3=document.getElementById('saz-doenca-h3');if(h3){h3.textContent='';h3.style.display='none';}
+    const sub=document.getElementById('saz-doenca-sub');if(sub)sub.textContent='Selecione uma doença acima para ver a sazonalidade.';
+    const info=document.getElementById('saz-doenca-info');if(info)info.textContent='';return;}
+  const saude_m=SAU_MEN[grupo]||[];
+  const sazMed=D.meses_nomes.map((_,mi)=>{const vals=[];for(let i=mi;i<180;i+=12){const v=saude_m[i];if(v!==null&&v!==undefined)vals.push(v);}return vals.length?parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)):null;});
+  const maxS=Math.max(...sazMed.filter(v=>v!==null));const picoMes=D.meses_nomes[sazMed.indexOf(maxS)];const nome=grupo.replace(/_/g,' ');
+  const h3El=document.getElementById('saz-doenca-h3');if(h3El){h3El.textContent=`${nome} — sazonalidade (média 2010-2024)`;h3El.style.display='block';}
+  const subEl=document.getElementById('saz-doenca-sub');if(subEl)subEl.textContent='Média de internações por mês do ano · SIH/SUS · Cáceres-MT';
+  const infoEl=document.getElementById('saz-doenca-info');if(infoEl)infoEl.textContent=`Pico: ${picoMes} (${maxS} intern./mês)`;
+  mk('g-saz-doenca',{type:'bar',data:{labels:D.meses_nomes,datasets:[{label:`${nome} — média internações`,data:sazMed,
+    backgroundColor:sazMed.map(v=>v===null?'rgba(0,0,0,0)':v>=maxS*.85?'rgba(198,40,40,.8)':v>=maxS*.6?'rgba(230,81,0,.7)':'rgba(46,125,50,.6)'),borderWidth:0}]},
+    options:{...bOpt(),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Média: ${c.raw} int./mês`}}},
+      scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}},title:{display:true,text:'Internações/mês',font:{size:10}}}}}});}
+
+// GDESC DINÂMICO SÉRIE
+const SERIE_DESCS={
+  tmax:{titulo:'Temperatura máxima mensal',oq:'Temperatura máxima de cada mês 2010-2024. Vermelho = onda de calor (>42,1°C = P90).',pq:'2023 teve 4 meses consecutivos acima de 42°C. Pico sazonal: agosto-outubro.',fn:'NASA POWER API v2.5 (MERRA-2).'},
+  hi:{titulo:'Sensação Térmica (Índice de Calor)',oq:'Combina temperatura e umidade (fórmula Rothfusz/NWS). Vermelho = Perigo extremo (>54°C).',pq:'Janeiro com T=38°C e UR=75% gera sensação de 66°C. Relevante para trabalhadores rurais e idosos.',fn:'NASA POWER + fórmula NWS/NOAA.'},
+  prec:{titulo:'Precipitação total mensal',oq:'Total de chuva (mm). Vermelho = chuva extrema (>248mm = P95). Marrom = seca (<1,9mm = P10).',pq:'Meses extremos concentram surtos de dengue, diarreia e leptospirose.',fn:'NASA POWER (estimativa satélite). Para eventos diários: ANA/INMET.'},
+  aod:{titulo:'AOD 550nm — qualidade do ar',oq:'Partículas no ar (NASA MODIS). Proxy de fumaça/PM2.5. Vermelho = fumaça severa (>0,422 = P90).',pq:'Set/2024 = AOD 1,48 (pior da série). Asma e DPOC são os primeiros afetados.',fn:'NASA MODIS Terra/Aqua — AOD 550nm.'},
+  umid:{titulo:'Umidade relativa do ar',oq:'% de umidade. Vermelho = perigoso (<30% = alerta INMET). Amarelo = atenção (30-40%).',pq:'Agosto: média 36% em Cáceres — abaixo do mínimo OMS (40%). Amplifica efeito do calor.',fn:'NASA POWER API v2.5 (MERRA-2).'},
+};
+const MNM_MAP={tmax:'T. máxima (°C)',prec:'Precipitação (mm)',umid:'Umidade (%)',aod:'AOD 550nm'};
+const CORR_MENSAIS=[{"grupo":"ANIMAIS_PECONHENTOS","var":"umid","r":0.163,"r2":0.026,"p":0.04899,"n":147,"slope":0.02,"intercept":1.6,"sig":"*"},{"grupo":"DENGUE","var":"prec","r":0.369,"r2":0.136,"p":9e-05,"n":108,"slope":0.0358,"intercept":0.78,"sig":"***"},{"grupo":"DENGUE","var":"umid","r":0.24,"r2":0.058,"p":0.01231,"n":108,"slope":0.1091,"intercept":-2.9,"sig":"*"},{"grupo":"NEOPLASIAS","var":"tmax","r":0.151,"r2":0.023,"p":0.04255,"n":180,"slope":0.9025,"intercept":15.74,"sig":"*"},{"grupo":"NEOPLASIAS","var":"prec","r":-0.185,"r2":0.034,"p":0.01275,"n":180,"slope":-0.0505,"intercept":53.54,"sig":"*"},{"grupo":"NEOPLASIAS","var":"umid","r":-0.164,"r2":0.027,"p":0.02748,"n":180,"slope":-0.2035,"intercept":61.84,"sig":"*"},{"grupo":"RENAL_URINARIO","var":"tmax","r":0.269,"r2":0.072,"p":0.00026,"n":180,"slope":2.0218,"intercept":11.57,"sig":"***"},{"grupo":"RENAL_URINARIO","var":"umid","r":-0.199,"r2":0.04,"p":0.00745,"n":180,"slope":-0.3105,"intercept":105.95,"sig":"**"},{"grupo":"RESPIRATORIO","var":"prec","r":-0.231,"r2":0.053,"p":0.00185,"n":180,"slope":-0.068,"intercept":71.54,"sig":"**"},{"grupo":"TRANSTORNOS_MENTAIS","var":"prec","r":-0.238,"r2":0.057,"p":0.00785,"n":124,"slope":-0.0045,"intercept":2.56,"sig":"**"}];
+function toggleSerieDesc(){
+  const body=document.getElementById('gdesc-serie-body'),btn=body.previousElementSibling;
+  if(body.classList.contains('open')){body.classList.remove('open');btn.textContent='▶ Entenda este gráfico';return;}
+  body.classList.add('open');btn.textContent='▼ Entenda este gráfico';
+  const v=document.getElementById('sel-saz-serie').value,isD=v.startsWith('d_'),grupo=isD?v.slice(2):'';
+  if(isD){
+    const corrList=CORR_MENSAIS.filter(c=>c.grupo===grupo).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).map(c=>`<li>${MNM_MAP[c.var]||c.var}: r=${c.r>0?'+':''}${c.r.toFixed(3)}, p=${c.p.toFixed(4)} ${c.p<0.05?'✓':''}</li>`).join('');
+    body.innerHTML=`<div class="gdesc-sec"><strong>O que mostra</strong><p>Internações mensais por ${grupo.replace(/_/g,' ')} em Cáceres 2010-2024. Vermelho = pico (≥75% do máximo). Lacunas = meses sem registro no SIH.</p></div><div class="gdesc-sec"><strong>Associações com clima (Pearson, n até 180)</strong>${corrList||'<p>Nenhuma associação significativa (p&lt;0,05) detectada.</p>'}</div><div class="fonte-tag">📋 DATASUS SIH/SUS · Cáceres-MT</div>`;
+  }else{const d=SERIE_DESCS[v];if(!d){body.innerHTML='';return;}body.innerHTML=`<div class="gdesc-sec"><strong>O que mostra</strong><p>${d.oq}</p></div><div class="gdesc-sec"><strong>Por que importa</strong><p>${d.pq}</p></div><div class="fonte-tag">📡 ${d.fn}</div>`;}}
+
+// SÉRIE MENSAL
+function getSerieFlat(v){
+  if(v==='tmax')return D.tmax_mensal_flat;if(v==='prec')return D.prec_mensal_flat;
+  if(v==='hi')return D.hi_mensal_flat;if(v==='aod')return D.aod_mensal_flat;if(v==='umid')return D.umid_mensal_flat;
+  if(v.startsWith('d_')){const g=v.slice(2);return(SAU_MEN[g]||[]).map(x=>x===null||x===undefined?null:x);}return[];}
+function renderSerieMensal(){
+  const v=document.getElementById('sel-saz-serie').value,isD=v.startsWith('d_'),grupo=isD?v.slice(2):'';
+  const vals=getSerieFlat(v),labels=D.labels_mensais||LAB_M,p95=D.p95_prec,p10=D.p10_prec,p90t=D.p90_tmax;
+  let bgs,titulo,eventos,fonte;
+  if(isD){const maxVal=Math.max(1,...vals.filter(x=>x!==null&&x!==undefined)),p75=maxVal*.75,p50=maxVal*.50;
+    bgs=vals.map(v2=>v2===null||v2===undefined?'rgba(0,0,0,0)':v2>=p75?'rgba(198,40,40,.82)':v2>=p50?'rgba(230,81,0,.7)':'rgba(46,125,50,.65)');
+    titulo=`${grupo.replace(/_/g,' ')} — internações mensais (jan/2010 a dez/2024) · Cáceres`;
+    eventos='Vermelho = pico (≥75% do máximo). Laranja = moderado. Verde = baixo. Lacunas = sem registro no SIH.';fonte='DATASUS SIH/SUS · Cáceres-MT · 2010-2024.';
+  }else{
+    const lim={tmax:{above:p90t,cH:'rgba(198,40,40,.85)',cL:'rgba(249,168,37,.6)',desc:`Vermelho: onda de calor (>${p90t}°C = P90)`,fonte:'NASA POWER'},
+      hi:{above:54,cH:'rgba(136,14,79,.85)',cL:'rgba(230,81,0,.6)',desc:'Vermelho: sensação > 54°C',fonte:'NASA POWER + Rothfusz'},
+      prec:{above:p95,below:p10,cH:'rgba(198,40,40,.8)',cM:'rgba(2,119,189,.55)',cL:'rgba(121,85,72,.7)',desc:`Vermelho: chuva extrema (>${p95}mm = P95) · Marrom: seca (<${p10}mm)`,fonte:'NASA POWER'},
+      aod:{above:0.422,cH:'rgba(216,67,21,.85)',cL:'rgba(255,167,38,.6)',desc:'Vermelho: fumaça severa (AOD > 0,422 = P90)',fonte:'NASA MODIS'},
+      umid:{above:null,cL:'rgba(2,119,189,.55)',desc:'Umidade relativa mensal',fonte:'NASA POWER'}};
+    const cfg=lim[v]||{cL:'rgba(2,119,189,.55)',desc:'',fonte:''};
+    bgs=vals.map(val=>{if(val===null||val===undefined)return'rgba(0,0,0,0)';if(cfg.above&&val>cfg.above)return cfg.cH;if(cfg.below&&val<cfg.below)return cfg.cL||'rgba(121,85,72,.7)';return cfg.cM||cfg.cL;});
+    const vN={tmax:'Temperatura máxima (°C)',hi:'Sensação Térmica (°C)',prec:'Precipitação (mm)',aod:'AOD 550nm',umid:'Umidade (%)'};
+    titulo=`${vN[v]||v} — 180 meses (jan/2010 a dez/2024) · Cáceres`;eventos=cfg.desc;fonte=`${cfg.fonte}. Evento extremo por percentil da série.`;}
+  document.getElementById('serie-h3').textContent=titulo;
+  document.getElementById('serie-sub').textContent='Eixo X: Ano e Mês. Marcações a cada 6 meses.';
+  document.getElementById('serie-eventos').textContent=eventos;
+  document.getElementById('serie-nota-fonte').innerHTML=`<strong>Fonte:</strong> ${fonte}`;
+  mk('g-serie-mensal',{type:'bar',data:{labels,datasets:[{label:titulo,data:vals,backgroundColor:bgs,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>c.raw!==null?`${c.label}: ${c.raw}${isD?' intern.':''}`:''}}},
+      scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:10},maxRotation:45,callback:(val,idx)=>idx%6===0?labels[idx]:''}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}}}}}})}
+
+// PERFIL CLIMÁTICO MENSAL (renderPerfilZona)
+let perfilVar='tmax';
+const PERFIL_DESCS={
+  tmax:{faixas:[{cor:'rgba(67,160,71,.85)',txt:'Abaixo de 32°C — Normal'},{cor:'rgba(249,168,37,.9)',txt:'32–35°C — Cautela'},{cor:'rgba(230,81,0,.85)',txt:'35–39°C — Cautela extrema'},{cor:'rgba(198,40,40,.85)',txt:'39–42°C — Perigo'},{cor:'rgba(136,14,79,.85)',txt:'Acima de 42°C — Perigo extremo'}],
+    fontes:['🌡️ <strong>OMS:</strong> temperaturas >38°C aumentam mortalidade cardiovascular (WHO, 2023).','📋 <strong>INMET:</strong> onda de calor = T.máx ≥ 5°C acima da normal por ≥ 3 dias.','📡 <strong>Fonte dos dados:</strong> NASA POWER API v2.5 — reanálise MERRA-2.'],limite:'Dados representam médias mensais históricas (2010-2024), não eventos pontuais.'},
+  hi:{faixas:[{cor:'rgba(67,160,71,.85)',txt:'Abaixo de 27°C — Confortável'},{cor:'rgba(249,168,37,.9)',txt:'27–32°C — Cautela'},{cor:'rgba(230,81,0,.85)',txt:'32–41°C — Cautela extrema'},{cor:'rgba(198,40,40,.85)',txt:'41–54°C — Perigo'},{cor:'rgba(136,14,79,.85)',txt:'Acima de 54°C — Perigo extremo'}],
+    fontes:['🌡️ <strong>Fórmula Rothfusz (NWS/NOAA):</strong> temperatura + umidade.','📋 <strong>OMS:</strong> sensação térmica é o indicador mais relevante para saúde pública em eventos de calor.','📡 <strong>Fonte:</strong> NASA POWER MERRA-2.'],limite:'HI mensal usa médias mensais — o pico diário pode ser significativamente maior.'},
+  prec:{faixas:[{cor:'rgba(121,85,72,.8)',txt:'< 20mm — Seca severa'},{cor:'rgba(249,168,37,.85)',txt:'20–50mm — Atenção'},{cor:'rgba(79,195,247,.85)',txt:'50–150mm — Moderado'},{cor:'rgba(2,119,189,.85)',txt:'150–248mm — Chuvoso normal'},{cor:'rgba(198,40,40,.85)',txt:'> 248mm — Chuva extrema (P95)'}],
+    fontes:['📋 <strong>ANA (Resolução 903/2021):</strong> extremos por percentis da série local.','📋 <strong>OMS/OPAS:</strong> chuvas extremas aumentam risco de diarreias, dengue e leptospirose.','📡 <strong>Fonte:</strong> NASA POWER API v2.5 (MERRA-2).'],limite:'⚠️ Estimativa por satélite. Para eventos diários pontuais, usar dados de estações ANA/INMET.'},
+  aod:{faixas:[{cor:'rgba(67,160,71,.85)',txt:'AOD < 0,20 — Boa qualidade'},{cor:'rgba(249,168,37,.85)',txt:'0,20–0,30 — Moderada'},{cor:'rgba(230,81,0,.85)',txt:'0,30–0,40 — Regular / Atenção'},{cor:'rgba(198,40,40,.85)',txt:'0,40–0,50 — Ruim'},{cor:'rgba(136,14,79,.85)',txt:'≥ 0,50 — Muito ruim'}],
+    fontes:['📋 <strong>CONAMA Resolução 491/2018:</strong> padrões nacionais de qualidade do ar.','📋 <strong>OMS Air Quality Guidelines (2021):</strong> PM2.5 anual ≤ 5 µg/m³ (meta).','📡 <strong>Fonte:</strong> NASA MODIS Terra/Aqua — AOD 550nm.'],limite:'AOD ≠ PM2.5 direto. Para monitoramento oficial: rede QUALAR/IBAMA e SEMA-MT.'},
+  umid:{faixas:[{cor:'rgba(2,119,189,.85)',txt:'> 80% — Muito úmido'},{cor:'rgba(67,160,71,.85)',txt:'60–80% — Confortável (faixa OMS)'},{cor:'rgba(249,168,37,.85)',txt:'40–60% — Baixo'},{cor:'rgba(230,81,0,.85)',txt:'30–40% — Atenção (OMS)'},{cor:'rgba(198,40,40,.85)',txt:'< 30% — Perigoso (alerta INMET)'}],
+    fontes:['📋 <strong>OMS (WHO, 2009):</strong> faixa confortável: 40–60% de umidade relativa.','📋 <strong>INMET:</strong> alerta laranja quando UR < 30% por ≥ 2 dias.','📡 <strong>Fonte:</strong> NASA POWER API v2.5 (MERRA-2).'],limite:'Dados são médias mensais. Nas horas do meio-dia a umidade pode ser bem menor.'}};
+
+function setPerfilVar(v,btn){perfilVar=v;document.querySelectorAll('#perfil-btns .btn').forEach(b=>b.className='btn sec');btn.className='btn prim';
+  const body=document.getElementById('gdesc-perfil-body');if(body&&body.classList.contains('open')){togglePerfilDesc();togglePerfilDesc();}renderPerfilZona();}
+
+function renderPerfilZona(){
+  const SC=D.sazonalidade_completa,v=perfilVar,MN=D.meses_nomes;
+  function corTemp(t){if(t>=42)return'rgba(136,14,79,.85)';if(t>=39)return'rgba(198,40,40,.85)';if(t>=35)return'rgba(230,81,0,.85)';if(t>=32)return'rgba(249,168,37,.9)';return'rgba(67,160,71,.85)';}
+  function corHI(h){if(h>=54)return'rgba(136,14,79,.85)';if(h>=41)return'rgba(198,40,40,.85)';if(h>=32)return'rgba(230,81,0,.85)';if(h>=27)return'rgba(249,168,37,.9)';return'rgba(67,160,71,.85)';}
+  function corPrec(p){if(p>=248)return'rgba(198,40,40,.85)';if(p>=150)return'rgba(2,119,189,.85)';if(p>=50)return'rgba(79,195,247,.85)';if(p>=20)return'rgba(249,168,37,.85)';return'rgba(121,85,72,.8)';}
+  function corAOD(a){if(a>=0.5)return'rgba(136,14,79,.85)';if(a>=0.4)return'rgba(198,40,40,.85)';if(a>=0.3)return'rgba(230,81,0,.85)';if(a>=0.2)return'rgba(249,168,37,.85)';return'rgba(67,160,71,.85)';}
+  function corUmid(u){if(u<30)return'rgba(198,40,40,.85)';if(u<40)return'rgba(230,81,0,.85)';if(u<55)return'rgba(249,168,37,.85)';if(u<80)return'rgba(67,160,71,.85)';return'rgba(2,119,189,.85)';}
+  if(v==='tmax'||v==='hi'){const isHI=v==='hi',medias=MN.map((_,i)=>SC[i+1][isHI?'hi':'tmax']),maxs=MN.map((_,i)=>SC[i+1].tmax_max),mins=MN.map((_,i)=>SC[i+1].tmax_min),corFn=isHI?corHI:corTemp;
+    document.getElementById('perfil-titulo').textContent=isHI?'Sensação Térmica (Índice de Calor) — faixas de risco NWS':'Temperatura máxima mensal — faixas de risco';
+    document.getElementById('perfil-sub').textContent=isHI?'Sensação real do corpo (temperatura + umidade). Barra fina = máximo histórico.':'Temperatura máxima média histórica. Barra fina = máximo histórico. Cores = nível de risco.';
+    mk('g-perfil-zona',{type:'bar',data:{labels:MN,datasets:[
+      {label:'Máx histórico',data:maxs,backgroundColor:maxs.map(t=>corFn(t).replace('.85','.22').replace('.9','.22')),borderColor:maxs.map(t=>corFn(t)),borderWidth:1,barPercentage:0.75,categoryPercentage:1.0,order:2},
+      {label:isHI?'Sensação térmica (°C)':'T. máxima (°C)',data:medias,backgroundColor:medias.map(t=>corFn(t)),borderWidth:0,barPercentage:0.55,categoryPercentage:1.0,order:1}]},
+      options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}},
+        tooltip:{callbacks:{label:c=>{const mi=c.dataIndex,s=SC[mi+1];if(c.datasetIndex===0)return`Máx histórico: ${c.raw}°C`;return[`Média: ${c.raw}°C`,`Máx: ${maxs[mi]}°C`,`Mín: ${mins[mi]}°C`,isHI?`T.máx: ${s.tmax}°C | Umid: ${s.umid}%`:`Umid: ${s.umid}%`];}}}},
+        scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}},min:isHI?25:25,max:isHI?78:48,title:{display:true,text:'°C',font:{size:10}}}}}});
+  }else if(v==='prec'){const medias=MN.map((_,i)=>SC[i+1].prec),maxs=MN.map((_,i)=>SC[i+1].prec_max),P95=D.p95_prec||248;
+    document.getElementById('perfil-titulo').textContent='Precipitação mensal — médias e máximos históricos';
+    document.getElementById('perfil-sub').textContent='Barra = média histórica. Barra fina = máximo já registrado. Limiares de seca e chuva extrema marcados.';
+    mk('g-perfil-zona',{type:'bar',data:{labels:MN,datasets:[
+      {label:'Máx histórico (mm)',data:maxs,backgroundColor:'rgba(2,119,189,.18)',borderColor:'rgba(2,119,189,.4)',borderWidth:1,barPercentage:0.75,categoryPercentage:1.0,order:2},
+      {label:'Média histórica (mm)',data:medias,backgroundColor:medias.map(p=>corPrec(p)),borderWidth:0,barPercentage:0.55,categoryPercentage:1.0,order:1},
+      {type:'line',label:`Chuva extrema (${P95}mm = P95)`,data:MN.map(()=>P95),borderColor:'rgba(198,40,40,.7)',borderWidth:2,borderDash:[6,3],pointRadius:0,fill:false,order:0},
+      {type:'line',label:'Seca severa (20mm)',data:MN.map(()=>20),borderColor:'rgba(121,85,72,.6)',borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false,order:0}]},
+      options:{...bOpt(),plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:c=>{if(c.dataset.label.includes('extrema')||c.dataset.label.includes('Seca'))return null;const mi=c.dataIndex,s=SC[mi+1];if(c.datasetIndex===0)return`Máx histórico: ${c.raw}mm`;return[`Média: ${c.raw}mm`,`Máx: ${maxs[mi]}mm`,`Mín: ${s.prec_min}mm`];}}}},
+        scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}},min:0,title:{display:true,text:'mm',font:{size:10}}}}}});
+  }else if(v==='aod'){const medias=MN.map((_,i)=>D.sazonalidade[i+1].aod);
+    document.getElementById('perfil-titulo').textContent='AOD 550nm — qualidade do ar por mês (NASA MODIS)';
+    document.getElementById('perfil-sub').textContent='AOD = proxy de PM2.5 e fumaça. Cores por faixa adaptada do CONAMA 491/2018 e OMS. Setembro = crítico.';
+    mk('g-perfil-zona',{type:'bar',data:{labels:MN,datasets:[{label:'AOD 550nm',data:medias,backgroundColor:medias.map(a=>corAOD(a)),borderWidth:0},
+      {type:'line',label:'Atenção (0,20)',data:MN.map(()=>0.20),borderColor:'rgba(249,168,37,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
+      {type:'line',label:'Regular (0,30)',data:MN.map(()=>0.30),borderColor:'rgba(230,81,0,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
+      {type:'line',label:'Ruim (0,40)',data:MN.map(()=>0.40),borderColor:'rgba(198,40,40,.7)',borderWidth:2,borderDash:[4,3],pointRadius:0,fill:false}]},
+      options:{...bOpt(),scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}},min:0,max:0.72,title:{display:true,text:'AOD',font:{size:10}}}}}});
+  }else if(v==='umid'){const medias=MN.map((_,i)=>D.sazonalidade[i+1].umid);
+    document.getElementById('perfil-titulo').textContent='Umidade relativa do ar — faixas de risco (OMS / INMET)';
+    document.getElementById('perfil-sub').textContent='Barras coloridas por nível de risco. <30%: alerta INMET. <40%: alerta OMS. Agosto e setembro são críticos.';
+    mk('g-perfil-zona',{type:'bar',data:{labels:MN,datasets:[{label:'Umidade (%)',data:medias,backgroundColor:medias.map(u=>corUmid(u)),borderWidth:0},
+      {type:'line',label:'Alerta INMET (30%)',data:MN.map(()=>30),borderColor:'rgba(198,40,40,.7)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false},
+      {type:'line',label:'Referência OMS (40%)',data:MN.map(()=>40),borderColor:'rgba(230,81,0,.6)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
+      {type:'line',label:'Conforto OMS (60%)',data:MN.map(()=>60),borderColor:'rgba(67,160,71,.5)',borderWidth:1,borderDash:[6,4],pointRadius:0,fill:false}]},
+      options:{...bOpt(),scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10}},min:0,max:100,title:{display:true,text:'%',font:{size:10}}}}}});
+}
+}
+
+// SAÚDE×AMBIENTE ANUAL
+let regrCompData=[];
+function renderRegr(){
+  const xKey=document.getElementById('sel-x').value,yKey=document.getElementById('sel-y').value,lag=+document.getElementById('sel-lag').value;
+  const xArr=D.clima_series[xKey]||[],yArr=D.saude_series[yKey]||[];
+  const x=lag?xArr.slice(0,-lag):xArr,y=lag?yArr.slice(lag):yArr,anos=lag?ANOS.slice(0,-lag):ANOS;
+  const pairs=anos.map((a,i)=>({a,x:x[i],y:y[i]})).filter(p=>p.x&&p.y);
+  const xf=pairs.map(p=>p.x),yf=pairs.map(p=>p.y),af=pairs.map(p=>p.a);
+  const{a:ic,b:sl}=linReg(xf,yf);const xMin=Math.min(...xf),xMax=Math.max(...xf);
+  const rData=D.regressoes[`${xKey}||${yKey}`]||{r:0,r2:0,p:1,slope:sl,intercept:ic,n:xf.length};
+  document.getElementById('regr-titulo').textContent=`${xKey} × ${yKey}${lag?` (lag ${lag} ano)`:''} — dispersão`;
+  mk('g-regr-scatter',{type:'scatter',data:{datasets:[
+    {label:yKey,data:xf.map((v,i)=>({x:v,y:yf[i],ano:af[i]})),backgroundColor:C.v+'cc',pointRadius:7,pointHoverRadius:10},
+    {label:`ŷ=${rData.slope.toFixed(2)}×X+${rData.intercept.toFixed(0)}`,data:[{x:xMin,y:ic+sl*xMin},{x:xMax,y:ic+sl*xMax}],type:'line',borderColor:'#777',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}},
+      tooltip:{callbacks:{label:c=>c.dataset.label.startsWith('ŷ')?null:[`${c.raw.ano}: X=${c.raw.x?.toFixed(2)}`,`Y=${c.raw.y}`]}}},
+    scales:{x:{title:{display:true,text:xKey,font:{size:11}},grid:{color:'#f0f0f0'},ticks:{font:{size:10}}},y:{title:{display:true,text:yKey,font:{size:11}},grid:{color:'#f0f0f0'},ticks:{font:{size:10}}}}}});
+  document.getElementById('regr-stat').innerHTML=statBox(rData.r,rData.p,rData.r2,rData.slope,rData.intercept,rData.n,xKey,yKey);
+  document.getElementById('regr-serie-titulo').textContent=`${xKey} e ${yKey}`;
+  mk('g-regr-serie',{type:'bar',data:{labels:anos,datasets:[
+    {type:'bar',label:yKey,data:yf,backgroundColor:C.vcl,borderColor:C.v,borderWidth:1.5,yAxisID:'yY'},
+    {type:'line',label:xKey,data:xf,borderColor:C.am,borderWidth:2.5,yAxisID:'yX',pointRadius:5,tension:.3}]},
+    options:bOpt({yY:{type:'linear',position:'left',title:{display:true,text:yKey.split('(')[0].trim(),font:{size:10}},ticks:{font:{size:10}}},yX:{type:'linear',position:'right',title:{display:true,text:xKey.split('(')[0].trim(),font:{size:10}},grid:{drawOnChartArea:false},ticks:{font:{size:10}}}})});}
+function addRegrComp(){
+  const xKey=document.getElementById('sel-x').value,yKey=document.getElementById('sel-y').value;
+  const rData=D.regressoes[`${xKey}||${yKey}`]||{r:0,p:1};const id='rc_'+Date.now();
+  regrCompData.push({id,xKey,yKey,r:rData.r,p:rData.p,label:`${xKey.split('(')[0].trim()} × ${yKey.split('(')[0].trim()}`});
+  renderRegrLista();renderRegrComp();}
+function removeRegr(id){regrCompData=regrCompData.filter(d=>d.id!==id);renderRegrLista();renderRegrComp();}
+function clearAllRegr(){regrCompData=[];renderRegrLista();renderRegrComp();}
+function renderRegrLista(){document.getElementById('regr-lista').innerHTML=regrCompData.map(d=>`<div class="regr-item"><button class="rm" onclick="removeRegr('${d.id}')">✕</button><span>${d.label} (r=${d.r.toFixed(2)})</span></div>`).join('');}
+function renderRegrComp(){
+  if(!regrCompData.length){if(CH['g-regr-comp'])CH['g-regr-comp'].destroy();
+    document.getElementById('regr-comp-leg').innerHTML='';return;}
+  const labels=regrCompData.map(d=>d.r>0.05?'↑ '+d.label:d.r<-0.05?'↓ '+d.label:'→ '+d.label);
+  const values=regrCompData.map(d=>d.r);
+  const bgs=regrCompData.map(d=>d.p<=0.05?'rgba(46,125,50,.82)':d.p<=0.10?'rgba(230,81,0,.75)':'rgba(84,110,122,.6)');
+  const borders=regrCompData.map(d=>d.p<=0.05?'rgba(27,94,32,1)':d.p<=0.10?'rgba(191,54,12,1)':'rgba(55,71,79,1)');
+  // Plugin de fundo: lado positivo = verde claro, negativo = vermelho claro
+  const bgPlugin={id:'bgSides',beforeDraw(chart){
+    const {ctx,chartArea:{top,bottom,left,right},scales:{x}}=chart;
+    const zero=x.getPixelForValue(0);
+    ctx.save();
+    ctx.fillStyle='rgba(198,40,40,.06)';ctx.fillRect(left,top,zero-left,bottom-top);
+    ctx.fillStyle='rgba(46,125,50,.06)';ctx.fillRect(zero,top,right-zero,bottom-top);
+    ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(zero,top);ctx.lineTo(zero,bottom);ctx.stroke();
+    ctx.restore();
+  }};
+  const el=document.getElementById('g-regr-comp');
+  if(!el)return;
+  if(CH['g-regr-comp'])CH['g-regr-comp'].destroy();
+  CH['g-regr-comp']=new Chart(el.getContext('2d'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:'r de Pearson',data:values,
+      backgroundColor:bgs,borderColor:borders,borderWidth:1.5,borderRadius:3
+    }]},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>{
+          const d=regrCompData[c.dataIndex];
+          const sig=d.p<=0.05?'✓ Significativo':d.p<=0.10?'~ Marginal':'✗ Não significativo';
+          return[`r = ${c.raw.toFixed(3)}`,`p = ${d.p.toFixed(4)}  ${sig}`];
+        }}}
+      },
+      scales:{
+        x:{min:-1,max:1,grid:{color:'#e8e8e8'},ticks:{font:{size:11}},
+          title:{display:true,text:'← Negativa  |  r de Pearson  |  Positiva →',font:{size:11},color:'#546e7a'}},
+        y:{ticks:{font:{size:11}}}
+      }
+    },
+    plugins:[bgPlugin]
+  });
+  const legEl=document.getElementById('regr-comp-leg');
+  if(legEl)legEl.innerHTML=`<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:11.5px">
+    <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:rgba(46,125,50,.82);border:1.5px solid rgba(27,94,32,1)"></span>Significativo (p≤0,05)</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:rgba(230,81,0,.75);border:1.5px solid rgba(191,54,12,1)"></span>Marginal (p≤0,10)</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:rgba(84,110,122,.6);border:1.5px solid rgba(55,71,79,1)"></span>Não significativo</span>
+    <span style="display:flex;align-items:center;gap:8px;margin-left:8px;padding-left:12px;border-left:1px solid #ddd">
+      <span style="background:rgba(46,125,50,.08);padding:2px 8px;border-radius:4px;font-size:10.5px;color:#1b5e20">↑ Mais exposição → mais casos</span>
+      <span style="background:rgba(198,40,40,.08);padding:2px 8px;border-radius:4px;font-size:10.5px;color:#b71c1c">↓ Mais exposição → menos casos</span>
+    </span></div>`;
+}
+function getVarArr(v,ano){if(v==='hi'){const ha=D.hi_por_ano[String(ano)]||D.hi_por_ano[ano];return ha||[];}return D[`${v}_por_ano`]?.[ano]||[];}
+function renderComp(){
+  const aA=+document.getElementById('sel-ano-a').value,aB=+document.getElementById('sel-ano-b').value;
+  const v=document.getElementById('sel-comp-var').value;
+  const vL={tmax:'T. máxima (°C)',hi:'Sensação Térmica (°C)',prec:'Precipitação (mm)',aod:'AOD 550nm',umid:'Umidade (%)'}[v];
+  const dA=getVarArr(v,aA),dB=getVarArr(v,aB);const cor={tmax:C.am,hi:'#880e4f',prec:C.az,aod:C.fg,umid:C.v}[v];
+  document.getElementById('comp-titulo').textContent=`${vL} — ${aA} vs ${aB} · mês a mês`;
+  mk('g-comp-clima',{type:'line',data:{labels:MNM,datasets:[
+    {label:String(aA),data:dA,borderColor:cor,borderWidth:2.5,pointRadius:5,tension:.3,fill:false},
+    {label:String(aB),data:dB,borderColor:cor+'88',borderWidth:2,borderDash:[5,3],pointRadius:5,tension:.3,fill:false}]},options:bOpt()});
+  const diff=dA.map((v2,i)=>+((v2||0)-(dB[i]||0)).toFixed(2));
+  mk('g-comp-diff',{type:'bar',data:{labels:MNM,datasets:[{label:`${aA}−${aB}`,data:diff,backgroundColor:diff.map(d=>d>=0?'rgba(46,125,50,.7)':'rgba(198,40,40,.7)'),borderWidth:0}]},options:bOpt()});
+  const vars=['tmax','prec','aod','umid'],vLabs=['T.max','Chuva','Fumaça','Umid'];
+  const avg=arr=>arr.filter(v=>v).reduce((a,b)=>a+(b||0),0)/(arr.filter(v=>v).length||1);
+  const normAno=(vv,ano)=>{const mn=Math.min(...ANOS.map(a=>avg(getVarArr(vv,a)))),mx=Math.max(...ANOS.map(a=>avg(getVarArr(vv,a))));return+((avg(getVarArr(vv,ano))-mn)/(mx-mn)*100).toFixed(1);};
+  mk('g-comp-radar',{type:'radar',data:{labels:vLabs,datasets:[
+    {label:String(aA),data:vars.map(vv=>normAno(vv,aA)),borderColor:cor,backgroundColor:cor+'22',borderWidth:2,pointRadius:4},
+    {label:String(aB),data:vars.map(vv=>normAno(vv,aB)),borderColor:cor+'88',backgroundColor:'rgba(0,0,0,.05)',borderWidth:2,borderDash:[4,3],pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},scales:{r:{min:0,max:110,ticks:{display:false},pointLabels:{font:{size:11}}}}}});
+  const doencaSel=document.getElementById('sel-comp-doenca')?.value||'';const iA=ANOS.indexOf(aA),iB=ANOS.indexOf(aB);
+  const saude_h3=document.getElementById('comp-saude-h3'),saude_sub=document.getElementById('comp-saude-sub');
+  if(doencaSel&&SAU_MEN[doencaSel]){
+    const sm=SAU_MEN[doencaSel];
+    const valsA=MNM.map((_,mi)=>sm[iA*12+mi]!==null&&sm[iA*12+mi]!==undefined?sm[iA*12+mi]:null);
+    const valsB=MNM.map((_,mi)=>sm[iB*12+mi]!==null&&sm[iB*12+mi]!==undefined?sm[iB*12+mi]:null);
+    if(saude_h3)saude_h3.textContent=`${doencaSel.replace(/_/g,' ')} — ${aA} vs ${aB}`;
+    if(saude_sub)saude_sub.textContent='Internações mensais mês a mês. Linha sólida = Ano A. Tracejado = Ano B.';
+    mk('g-comp-saude',{type:'line',data:{labels:MNM,datasets:[
+      {label:String(aA),data:valsA,borderColor:C.v,backgroundColor:C.vcl,fill:true,tension:.3,borderWidth:2.5,pointRadius:5,spanGaps:true},
+      {label:String(aB),data:valsB,borderColor:C.az,borderWidth:2.5,tension:.3,pointRadius:5,fill:false,borderDash:[5,3],spanGaps:true}]},options:bOpt()});
+  }else{
+    const sk=['Cardiovascular (óbitos)','Respiratório (óbitos)','Pneumonia','Diarreicas','Dengue'];
+    if(saude_h3)saude_h3.textContent='Saúde — comparação entre anos';if(saude_sub)saude_sub.textContent='Resumo anual geral. Selecione uma doença acima para ver internações mensais.';
+    mk('g-comp-saude',{type:'bar',data:{labels:sk.map(k=>k.split('(')[0].trim()),datasets:[
+      {label:String(aA),data:sk.map(k=>D.saude_series[k]?.[iA]),backgroundColor:C.vcl,borderColor:C.v,borderWidth:1.5},
+      {label:String(aB),data:sk.map(k=>D.saude_series[k]?.[iB]),backgroundColor:'rgba(2,119,189,.2)',borderColor:C.az,borderWidth:1.5}]},options:bOpt()});}}
+// HEATMAPS
+const hmCfg={
+  aod:{color:v=>{const t=Math.min(1,v/1.5);return`rgb(${Math.round(255*Math.min(1,t*2))},${Math.round(180*Math.max(0,1-t*1.5))},40)`},fmt:v=>v?.toFixed(2)||'',title:'AOD 550nm'},
+  tmax:{color:v=>{const t=Math.min(1,(v-28)/17);return`rgb(${Math.round(255*Math.min(1,t*1.5))},${Math.round(200*Math.max(0,1-t))},40)`},fmt:v=>v?.toFixed(1)||'',title:'T. máxima (°C)'},
+  hi:{color:v=>{const t=Math.min(1,(v-35)/40);return`rgb(${Math.round(255*Math.min(1,t*1.3))},${Math.round(50*Math.max(0,1-t*1.5))},${Math.round(100*(1-t))})`},fmt:v=>v?.toFixed(1)||'',title:'Sensação Térmica (°C)'},
+  prec:{color:v=>{const t=Math.min(1,v/330);return`rgb(${Math.round(200*(1-t))},${Math.round(80+150*t)},${Math.round(150+100*t)})`},fmt:v=>Math.round(v||0)+'',title:'Precipitação (mm)'},
+  umid:{color:v=>{const t=(v-30)/50;return`rgb(${Math.round(200*(1-t))},${Math.round(80+150*t)},${Math.round(150+100*t)})`},fmt:v=>Math.round(v||0)+'',title:'Umidade (%)'}};
+let hmSelAno=null,hmDoencaMax=1;
+function hmDoencaColor(v){const t=Math.min(1,v/hmDoencaMax);return`rgb(${Math.round(255*Math.min(1,t*1.5))},${Math.round(180*Math.max(0,1-t*1.2))},${Math.round(50*(1-t))})`;}
+function getHMDataForYear(v,a){if(v.startsWith('d_')){const grupo=v.slice(2),saude=SAU_MEN[grupo]||[],ai=ANOS.indexOf(a);return MNM.map((_,mi)=>{const v2=saude[ai*12+mi];return v2!==null&&v2!==undefined?v2:0;});}return getVarArr(v,a);}
+function renderHM(){
+  const v=document.getElementById('sel-hm').value,isD=v.startsWith('d_'),grupo=isD?v.slice(2):'',cfg=isD?null:hmCfg[v];
+  const title=isD?(grupo.replace(/_/g,' ')+' — internações mensais (Cáceres)'):(cfg?cfg.title:v);
+  document.getElementById('hm-titulo').textContent=`Heatmap · ${title} · 2010-2024`;
+  document.getElementById('hm-sub').textContent=isD?'Internações por mês. Ausência = célula 0. Clique num ano para perfil detalhado.':'Cor mais intensa = valor maior. Clique num ano para perfil.';
+  if(isD){const saude=SAU_MEN[grupo]||[];hmDoencaMax=Math.max(1,...saude.filter(x=>x!==null&&x!==undefined));}
+  let html='<table class="hm"><thead><tr><th style="min-width:45px">Ano</th>';MNM.forEach(m=>{html+=`<th>${m}</th>`});html+='</tr></thead><tbody>';
+  ANOS.forEach(a=>{const vals=getHMDataForYear(v,a);html+=`<tr><td class="hm-label" onclick="hmSel(${a},'${v}')">${a}</td>`;
+    vals.forEach((val,mi)=>{const bg=isD?hmDoencaColor(val||0):(cfg?cfg.color(val||0):'#eee');const fmt=isD?(val||0):(cfg?cfg.fmt(val||0):val);const display=val===null||val===undefined?'':(isD&&val===0?'-':fmt);
+      html+=`<td style="background:${bg};color:${isD&&val>0?'#fff':'#666'}" onclick="hmSel(${a},'${v}')" title="${a} ${MNM[mi]}: ${fmt}">${display}</td>`;});html+='</tr>';});
+  html+='</tbody></table>';document.getElementById('hm-container').innerHTML=html;if(hmSelAno)hmSel(hmSelAno,v);}
+function hmSel(ano,v){
+  hmSelAno=ano;const isD=v.startsWith('d_'),grupo=isD?v.slice(2):'',cfg=isD?null:hmCfg[v];
+  const title=isD?(grupo.replace(/_/g,' ')+' — internações'):cfg.title;
+  document.getElementById('hm-perfil-titulo').textContent=`${title} — ${ano}`;
+  document.getElementById('hm-ano-sub').textContent=isD?`Internações mensais de ${ano}. Células em branco = sem registro.`:`Valores mensais de jan a dez de ${ano}.`;
+  const vals=getHMDataForYear(v,ano);const bgs=vals.map(val=>isD?hmDoencaColor(val||0):cfg.color(val||0));
+  mk('g-hm-perfil',{type:'bar',data:{labels:MNM,datasets:[{label:`${ano} — ${title}`,data:vals,backgroundColor:bgs,borderWidth:0}]},
+    options:{...bOpt(),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>isD?`${c.raw} internações`:cfg.fmt(c.raw||0)}}}}}); }
+
+// SAÚDE × AMBIENTE MENSAL
+const SAU_MEN=DM.series_saude_mensal||{};const LAB_M=DM.labels_m||[];
+function getClimaFlat(vk){if(vk==='tmax')return D.tmax_mensal_flat;if(vk==='prec')return D.prec_mensal_flat;if(vk==='hi')return D.hi_mensal_flat;if(vk==='aod')return D.aod_mensal_flat;if(vk==='umid')return D.umid_mensal_flat;return[];}
+function renderMensal(){
+  const grupo=document.getElementById('sel-men-grupo').value,vk=document.getElementById('sel-men-clima').value;
+  const saude_m=SAU_MEN[grupo]||[],clima_m=getClimaFlat(vk),labs=LAB_M.length?LAB_M:D.labels_mensais||[];
+  const pares=labs.map((lb,i)=>({lb,s:saude_m[i],c:clima_m[i]})).filter(p=>p.s!==null&&p.s!==undefined&&p.c!==null&&p.c!==undefined);
+  const corrObj=CORR_MENSAIS.find(c=>c.grupo===grupo&&c.var===vk);
+  document.getElementById('men-scatter-h3').textContent=`${MNM_MAP[vk]} × ${grupo.replace(/_/g,' ')} — dispersão (n=${pares.length} meses)`;
+  document.getElementById('men-serie-h3').textContent=`${grupo.replace(/_/g,' ')} e ${MNM_MAP[vk]} — 2010-2024`;
+  const xArr=pares.map(p=>p.c),yArr=pares.map(p=>p.s);
+  const{a:ic2,b:sl2}=linReg(xArr,yArr);const xMin=Math.min(...xArr),xMax=Math.max(...xArr);
+  const bgSc=pares.map(p=>{const mi=labs.indexOf(p.lb)%12;return[5,6,7,8,9].includes(mi)?'rgba(198,40,40,.6)':'rgba(2,119,189,.5)';});
+  mk('g-men-scatter',{type:'scatter',data:{datasets:[
+    {label:grupo.replace(/_/g,' '),data:pares.map(p=>({x:p.c,y:p.s,lb:p.lb})),backgroundColor:bgSc,pointRadius:4,pointHoverRadius:7},
+    {label:`ŷ=${sl2.toFixed(3)}×X+${ic2.toFixed(1)}`,data:[{x:xMin,y:ic2+sl2*xMin},{x:xMax,y:ic2+sl2*xMax}],type:'line',borderColor:'#333',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label.startsWith('ŷ')?null:[`${c.raw.lb}`,`${MNM_MAP[vk]}: ${c.raw.x?.toFixed(2)}`,`Internações: ${c.raw.y}`]}}},
+    scales:{x:{title:{display:true,text:MNM_MAP[vk],font:{size:11}},grid:{color:'#f0f0f0'},ticks:{font:{size:10}}},y:{title:{display:true,text:'Internações',font:{size:11}},grid:{color:'#f0f0f0'},ticks:{font:{size:10}}}}}});
+  const stEl=document.getElementById('men-stat-box');
+  if(stEl){if(corrObj){const sc=getSigClass(corrObj.p);const sg=corrObj.p<0.001?'***':corrObj.p<0.01?'**':corrObj.p<0.05?'*':'~';
+    stEl.innerHTML=`<div class="sb"><div class="sb-row"><div class="sb-it"><div class="sb-l">r Pearson</div><div class="sb-v ${sc}">${corrObj.r>0?'+':''}${corrObj.r.toFixed(3)}</div></div><div class="sb-it"><div class="sb-l">r²</div><div class="sb-v ${sc}">${(corrObj.r2*100).toFixed(1)}%</div></div><div class="sb-it"><div class="sb-l">p-valor</div><div class="sb-v ${sc}">${corrObj.p.toFixed(5)}</div></div><div class="sb-it"><div class="sb-l">Sig.</div><div class="sb-v ${sc}">${sg} ✓</div></div><div class="sb-it"><div class="sb-l">n meses</div><div class="sb-v ns">${corrObj.n}</div></div></div><div class="sb-txt">${corrObj.p<0.05?`Associação <strong>significativa</strong>. ${MNM_MAP[vk]} explica ${(corrObj.r2*100).toFixed(1)}% da variação mensal.`:`p=${corrObj.p.toFixed(4)} — não significativo.`}</div><div class="sb-eq">ŷ = ${corrObj.slope.toFixed(3)} × ${MNM_MAP[vk]} + ${corrObj.intercept.toFixed(1)}</div></div>`;
+  }else{stEl.innerHTML=`<div class="sb"><div class="sb-txt" style="color:var(--ci)">p ≥ 0,05 — sem associação significativa (n=${pares.length} meses).</div></div>`;}}
+  mk('g-men-serie',{type:'bar',data:{labels:labs,datasets:[
+    {type:'bar',label:'Internações/mês',data:saude_m.map(v=>v!==null&&v!==undefined?v:null),backgroundColor:'rgba(46,125,50,.55)',borderWidth:0,yAxisID:'yS'},
+    {type:'line',label:MNM_MAP[vk],data:clima_m,borderColor:C.am,borderWidth:2,yAxisID:'yC',pointRadius:0,tension:.3,spanGaps:true}]},
+    options:bOpt({yS:{type:'linear',position:'left',title:{display:true,text:'Internações',font:{size:10}},ticks:{font:{size:10}}},yC:{type:'linear',position:'right',title:{display:true,text:MNM_MAP[vk],font:{size:10}},grid:{drawOnChartArea:false},ticks:{font:{size:10}}}})});
+  const sazMed=D.meses_nomes.map((_,mi)=>{const vals=[];for(let i=mi;i<180;i+=12){const v=saude_m[i];if(v!==null&&v!==undefined)vals.push(v);}return vals.length?parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)):null;});
+  const sazCli=D.meses_nomes.map((_,mi)=>{const vals=[];for(let i=mi;i<180;i+=12){const v=clima_m[i];if(v!==null&&v!==undefined)vals.push(v);}return vals.length?parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)):null;});
+  document.getElementById('men-saz-h3').textContent=`${grupo.replace(/_/g,' ')} — média por mês do ano`;
+  const maxS=Math.max(...sazMed.filter(v=>v!==null));
+  mk('g-men-saz',{type:'bar',data:{labels:D.meses_nomes,datasets:[{label:'Média internações',data:sazMed,backgroundColor:sazMed.map(v=>v===null?'rgba(0,0,0,0)':v>=maxS*.8?'rgba(198,40,40,.75)':v>=maxS*.5?'rgba(230,81,0,.7)':'rgba(46,125,50,.65)'),borderWidth:0}]},options:{...bOpt(),plugins:{legend:{display:false}}}});
+  const nm=arr=>{const v=arr.filter(x=>x!==null);const mn=Math.min(...v),mx=Math.max(...v);return arr.map(x=>x===null?null:parseFloat(((x-mn)/(mx-mn)*100).toFixed(1)));};
+  mk('g-men-saz-comp',{type:'line',data:{labels:D.meses_nomes,datasets:[
+    {label:`${grupo.replace(/_/g,' ')} (norm.)`,data:nm(sazMed),borderColor:C.v,backgroundColor:C.vcl,fill:true,tension:.4,borderWidth:2.5,pointRadius:4},
+    {label:`${MNM_MAP[vk]} (norm.)`,data:nm(sazCli),borderColor:C.am,borderWidth:2.5,tension:.4,pointRadius:4,fill:false}]},
+    options:{...bOpt(),scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{min:0,max:105,title:{display:true,text:'Escala 0-100 (norm.)',font:{size:10}},grid:{color:'#f0f0f0'},ticks:{font:{size:10}}}}}});}
+function renderMensalTabela(){
+  const tbody=document.getElementById('men-corr-tbody');if(!tbody)return;
+  const vm={tmax:'T. máxima (°C)',prec:'Precipitação (mm)',umid:'Umidade (%)',aod:'AOD 550nm'};
+  const interp=c=>{const k=c.var+'_'+c.grupo;const m={'prec_DENGUE':'Chuva cria criadouros do Aedes aegypti','tmax_RENAL_URINARIO':'Calor → desidratação → litíase/insuf. renal','prec_RESPIRATORIO':'Seca sazonal associada a mais internações resp.','prec_TRANSTORNOS_MENTAIS':'Período seco: isolamento e saúde mental','umid_RENAL_URINARIO':'Ar seco + calor → desidratação → internação renal','tmax_NEOPLASIAS':'Sazonalidade de acesso a serviços oncológicos','prec_NEOPLASIAS':'Menor acesso no período chuvoso','umid_NEOPLASIAS':'Padrão sazonal de internações oncológicas','umid_DENGUE':'Alta umidade prolonga sobrevida do Aedes','umid_ANIMAIS_PECONHENTOS':'Umidade alta aumenta atividade de serpentes/escorpiões'};return m[k]||'';};
+  tbody.innerHTML=[...CORR_MENSAIS].sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).map(c=>`<tr onclick="loadMensalFromTab('${c.grupo}','${c.var}')" style="cursor:pointer"><td>${vm[c.var]||c.var}</td><td>${c.grupo.replace(/_/g,' ')}</td><td class="${c.r>=0?'tg1':'tg3'}">${c.r>0?'+':''}${c.r.toFixed(3)}</td><td>${(c.r2*100).toFixed(1)}%</td><td>${c.p.toFixed(5)}</td><td>${getSigBadge(c.p)}</td><td>${c.n}</td><td style="font-size:11px;color:var(--txt2)">${interp(c)}</td></tr>`).join('');}
+function loadMensalFromTab(grupo,vk){document.getElementById('sel-men-grupo').value=grupo;document.getElementById('sel-men-clima').value=vk;renderMensal();window.scrollTo({top:0,behavior:'smooth'});}
+
+// CORRELAÇÕES (tabela geral)
+function renderTabr(){
+  const filt=document.getElementById('sel-sig-filter').value,sort=document.getElementById('sel-sort').value;
+  let rows=Object.entries(D.regressoes).map(([k,v])=>{const[xk,yk]=k.split('||');return{xk,yk,...v,absR:Math.abs(v.r)};});
+  if(filt==='sig')rows=rows.filter(r=>r.p<=0.05);else if(filt==='marg')rows=rows.filter(r=>r.p<=0.10);else if(filt==='pos')rows=rows.filter(r=>r.r>0);else if(filt==='neg')rows=rows.filter(r=>r.r<0);
+  if(sort==='abs_r')rows.sort((a,b)=>b.absR-a.absR);else if(sort==='p')rows.sort((a,b)=>a.p-b.p);else rows.sort((a,b)=>b.r2-a.r2);
+  document.getElementById('tabr-count').textContent=`${rows.length} regressões`;
+  document.getElementById('tabr-body').innerHTML=rows.map(r=>`<tr onclick="loadRegrFromTab('${r.xk}','${r.yk}')" style="cursor:pointer"><td>${r.xk}</td><td>${r.yk}</td><td class="${r.r>=0?'tg1':'tg3'}">${r.r>0?'+':''}${r.r.toFixed(3)}</td><td>${(r.r2*100).toFixed(1)}%</td><td>${r.p.toFixed(4)}</td><td>${getSigBadge(r.p)}</td><td>${r.n}</td></tr>`).join('');
+  const top=rows.slice(0,20);
+  mk('g-tabr-bars',{type:'bar',data:{labels:top.map(r=>`${r.xk.split('(')[0].trim()} × ${r.yk.split('(')[0].trim()}`),datasets:[{label:'r de Pearson',data:top.map(r=>r.r),backgroundColor:top.map(r=>r.p<=0.05?'rgba(46,125,50,.75)':r.p<=0.10?'rgba(230,81,0,.6)':'rgba(84,110,122,.5)'),borderWidth:0}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`r=${c.raw.toFixed(3)}`}}},scales:{x:{min:-1,max:1,grid:{color:'#f0f0f0'},ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});}
+function loadRegrFromTab(xk,yk){document.getElementById('sel-x').value=xk;document.getElementById('sel-y').value=yk;tab('regr',null);renderRegr();}
+
+// IRAM
+function calcIRAM(mi){const s=D.sazonalidade[mi+1];const t0=34,t1=42.3,a0=0.15,a1=0.605,u0=35.8,u1=78.1;const rt=Math.max(0,(s.tmax-t0)/(t1-t0)),ra=Math.max(0,(s.aod-a0)/(a1-a0)),ru=Math.max(0,1-(s.umid-u0)/(u1-u0));return Math.max(0,Math.min(100,(rt*.40+ra*.35+ru*.25)*100));}
+function renderIRAM(){
+  const MN=D.meses_nomes,iram=MN.map((_,i)=>parseFloat(calcIRAM(i).toFixed(1)));
+  const cores=iram.map(v=>v>=80?'rgba(136,14,79,.85)':v>=60?'rgba(198,40,40,.82)':v>=40?'rgba(230,81,0,.80)':v>=20?'rgba(249,168,37,.85)':'rgba(67,160,71,.8)');
+  mk('g-iram-bar',{type:'bar',data:{labels:MN,datasets:[{label:'IRAM (0-100)',data:iram,backgroundColor:cores,borderWidth:0,borderRadius:4}]},
+    options:{...bOpt(),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.raw,nivel=v>=80?'🔴 Crítico':v>=60?'🟠 Alto':v>=40?'🟡 Moderado':v>=20?'🟢 Baixo':'⚪ Mínimo';const m=D.sazonalidade[c.dataIndex+1];return[`IRAM: ${v} — ${nivel}`,`T.max: ${m.tmax}°C | AOD: ${m.aod} | Umid: ${m.umid}%`];}}}},
+    scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{size:11}}},y:{min:0,max:105,grid:{color:'#f0f0f0'},ticks:{font:{size:10}},title:{display:true,text:'IRAM (0-100)',font:{size:10}}}}}});
+  const tN=MN.map((_,i)=>parseFloat(Math.max(0,Math.min(100,((D.sazonalidade[i+1].tmax-34)/(42.3-34))*100)).toFixed(1)));
+  const aN=MN.map((_,i)=>parseFloat(Math.max(0,Math.min(100,((D.sazonalidade[i+1].aod-0.15)/(0.605-0.15))*100)).toFixed(1)));
+  const uN=MN.map((_,i)=>parseFloat(Math.max(0,Math.min(100,(1-(D.sazonalidade[i+1].umid-35.8)/(78.1-35.8))*100)).toFixed(1)));
+  mk('g-iram-radar',{type:'radar',data:{labels:MN,datasets:[
+    {label:'Calor (T.max)',data:tN,borderColor:'rgba(198,40,40,.85)',backgroundColor:'rgba(198,40,40,.12)',borderWidth:2,pointRadius:3},
+    {label:'Fumaça (AOD)',data:aN,borderColor:'rgba(216,67,21,.85)',backgroundColor:'rgba(216,67,21,.10)',borderWidth:2,pointRadius:3},
+    {label:'Seca (inv. Umid.)',data:uN,borderColor:'rgba(230,81,0,.8)',backgroundColor:'rgba(230,81,0,.08)',borderWidth:2,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}}},scales:{r:{min:0,max:110,ticks:{display:false},pointLabels:{font:{size:11}},grid:{color:'rgba(0,0,0,.08)'}}}}}); renderIRAMSaude();}
+function renderIRAMSaude(){
+  const sel=document.getElementById('sel-iram-saude');if(!sel)return;const yk=sel.value,yArr=D.saude_series[yk]||[];
+  const iramSet=ANOS.map(a=>{const ai=ANOS.indexOf(a),aodSet=D.aod_por_ano[String(a)]?.[8]||0.3,tmaxSet=D.tmax_por_ano[String(a)]?.[8]||42,umidSet=D.umid_por_ano[String(a)]?.[8]||38;const rt=Math.max(0,(tmaxSet-34)/(42.3-34)),ra=Math.max(0,(aodSet-0.15)/(0.605-0.15)),ru=Math.max(0,1-(umidSet-35.8)/(78.1-35.8));return parseFloat(Math.max(0,Math.min(100,(rt*.40+ra*.35+ru*.25)*100)).toFixed(1));});
+  mk('g-iram-saude',{type:'bar',data:{labels:ANOS,datasets:[
+    {type:'bar',label:yk,data:yArr,backgroundColor:'rgba(46,125,50,.2)',borderColor:'rgba(46,125,50,.8)',borderWidth:1.5,yAxisID:'yS'},
+    {type:'line',label:'IRAM setembro',data:iramSet,borderColor:'rgba(136,14,79,.85)',borderWidth:2.5,pointRadius:5,tension:.3,yAxisID:'yI',fill:false}]},
+    options:bOpt({yS:{type:'linear',position:'left',title:{display:true,text:yk.split('(')[0].trim(),font:{size:10}},ticks:{font:{size:10}}},yI:{type:'linear',position:'right',min:0,max:105,title:{display:true,text:'IRAM',font:{size:10}},grid:{drawOnChartArea:false},ticks:{font:{size:10}}}})});}
+
+// DESCRIÇÕES SAZONALIDADE
+const DESCS={
+  tmax:{titulo:'Temperatura máxima por mês do ano — médias 2010-2024',sub:'Cada barra = temperatura máxima média histórica. Vermelho = mês mais quente.',oq:'Mostra qual mês do ano tem as temperaturas mais altas em Cáceres, calculado como média de 15 anos.',pq:'Temperaturas acima de 40°C aumentam o risco de AVC, infarto e crises de asma. Setembro é o mês mais quente (42,3°C em média).',fn:'NASA POWER API v2.5 (MERRA-2) — temperatura máxima mensal média.'},
+  hi:{titulo:'Sensação Térmica (Índice de Calor) por Mês',sub:'Índice de Calor = temperatura + umidade. Mede o que o corpo sente, não o termômetro.',oq:'Combina temperatura e umidade para estimar a sensação térmica real (fórmula Rothfusz/NWS).',pq:'Janeiro (T=36°C + UR=75%) tem sensação de ~57°C — mais perigoso para idosos do que setembro.',fn:'Temperatura e umidade: NASA POWER. Índice de Calor: fórmula Rothfusz (NWS, EUA).'},
+  prec:{titulo:'Precipitação Total por Mês — médias 2010-2024',sub:'Total de chuva por mês em mm. Meses com chuva intensa em azul, seca em marrom.',oq:'Precipitação total mensal média de 15 anos. Padrão bimodal: cheia (nov-mar) e seca (jun-set).',pq:'Chuvas intensas contaminam mananciais e criam criadouros de mosquito. O controle do Aedes deve ser intensificado em outubro-novembro.',fn:'NASA POWER API v2.5 (MERRA-2). LIMITAÇÃO: estimativa por satélite.'},
+  aod:{titulo:'AOD 550nm por Mês — qualidade do ar / fumaça',sub:'AOD: medida de partículas no ar. Proxy de fumaça e PM2.5.',oq:'Medida de densidade de partículas pelo satélite NASA MODIS. Setembro tem AOD médio de 0,60 — o dobro do limiar de atenção.',pq:'Em anos de grandes queimadas (2020, 2024), o ar ficou comprometido por 3-4 meses seguidos.',fn:'NASA MODIS Terra/Aqua — AOD 550nm mensal médio (2010-2024).'},
+  umid:{titulo:'Umidade Relativa por Mês',sub:'Percentual de umidade do ar. Baixa umidade = ar seco = risco respiratório.',oq:'Umidade relativa mensal média. Agosto tem média de 36% — abaixo do mínimo recomendado pela OMS (40%).',pq:'Ar muito seco resseca mucosas, facilita infecções respiratórias e aumenta risco de incêndios.',fn:'NASA POWER API v2.5 (MERRA-2) — umidade relativa mensal.'}};
+function descHTML(key){const d=DESCS[key];if(!d)return'';return`<div class="gdesc-sec"><strong>O que mostra</strong><p>${d.oq}</p></div><div class="gdesc-sec"><strong>Por que importa para gestores e população</strong><p>${d.pq}</p></div><div class="fonte-tag">📡 Fonte: ${d.fn}</div>`;}
+
+// NAV
+function tab(id,btn){
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  if(typeof btn==='object'&&btn) btn.classList.add('on');
+  else{const ids=['sazo','serie','regr','risco','comp','hmap','tabr'];const nb=document.querySelectorAll('.nb');const i=ids.indexOf(id);if(i>=0&&nb[i])nb[i].classList.add('on');}
+  if(id==='risco'){renderMensal();renderMensalTabela();}
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderSazCards();renderSazMain();renderSazDetail();renderSazTable();
+  renderPerfilZona();renderSerieMensal();renderRegr();renderComp();renderHM();
+  renderTabr();renderIRAM();renderMensalTabela();renderSazDoenca();
+});
+</script>
+</body>
+</html>
