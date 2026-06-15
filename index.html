@@ -1835,7 +1835,7 @@ function tab(id,btn){
   if(typeof btn==='object'&&btn) btn.classList.add('on');
   else{const ids=['inicio','sazo','serie','regr','risco','comp','hmap','tabr','sankey'];const nb=document.querySelectorAll('.nb');const i=ids.indexOf(id);if(i>=0&&nb[i])nb[i].classList.add('on');}
   if(id==='risco'){renderMensal();renderMensalTabela();}
-  if(id==='sankey'){setTimeout(function(){skSelected=null;skPosVar=null;skPosSau=null;skBuild();},50);}
+  if(id==='sankey'){if(!skPosVar){skBuild();}}
 }
 
 
@@ -2033,6 +2033,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderSazCards();renderSazMain();renderSazDetail();renderSazTable();
   renderPerfilZona();renderSerieMensal();renderRegr();renderComp();renderHM();
   renderTabr();renderIRAM();renderMensalTabela();renderSazDoenca();
+  // Inicializar Sankey ao carregar (evita problema de timing)
+  setTimeout(skBuild, 500);
 });
 </script>
 <div class="tooltip" id="sk-tt"></div>
