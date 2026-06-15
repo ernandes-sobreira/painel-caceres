@@ -968,24 +968,35 @@ footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 24px;
 
 <!-- ══ SANKEY ══════════════════════════════ -->
 <section class="pnl" id="p-sankey">
-<div class="ctx v" style="margin-bottom:16px">
-  <strong>Conexões Clima-Saúde — Diagrama de Fluxo (Sankey)</strong><br>
-  Visualização interativa das associações estatísticas entre variáveis ambientais
-  e grupos diagnósticos de saúde em Cáceres-MT (2010-2024).
-  Correlações mensais de Pearson · NASA POWER + DATASUS SIH/SUS.
+<div style="background:#1b5e20;color:#fff;padding:4px 10px;border-radius:4px;font-size:10px;display:inline-block;margin-bottom:8px">✅ v4 — SVG nativo integrado</div>
+<div class="ctx v" style="margin-bottom:14px">
+  <strong>Como ler:</strong> cada fluxo conecta uma variável ambiental a um grupo diagnóstico.
+  Largura proporcional ao |r de Pearson|.
+  Fluxos <strong>sólidos</strong> = significativos (p&lt;0,05). <strong>Tracejados</strong> = marginais (p 0,05–0,15).
+  <span style="color:#c62828;font-weight:700">Vermelho</span> = ↑ exposição → ↑ doença &nbsp;|&nbsp;
+  <span style="color:#1565c0;font-weight:700">Azul</span> = ↑ exposição → ↓ doença.
 </div>
-<div class="card" style="text-align:center;padding:40px 20px">
-  <div style="font-size:48px;margin-bottom:16px">🌡️</div>
-  <h3 style="font-size:18px;font-weight:700;color:#1b5e20;margin-bottom:8px">Diagrama de Conexões Clima × Saúde</h3>
-  <p style="font-size:13px;color:#555;max-width:500px;margin:0 auto 20px;line-height:1.6">
-    Diagrama Sankey interativo com 35 pares de correlação mensal (p&lt;0,15).<br>
-    Arraste os nós, clique para destacar fluxos, filtre por significância.
+<div id="filtros-sk" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+  <span style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Mostrar:</span>
+  <button class="btn prim" id="fsk-sig" onclick="skSetFiltro('sig',this)" style="font-size:11.5px;padding:5px 14px;border-radius:20px">✓ Significativas (p&lt;0,05)</button>
+  <button class="btn sec" id="fsk-all" onclick="skSetFiltro('all',this)" style="font-size:11.5px;padding:5px 14px;border-radius:20px">+ Marginais (p&lt;0,15)</button>
+  <span style="font-size:11px;color:var(--txt2);margin-left:4px" id="sk-count"></span>
+</div>
+<div class="card" style="padding:16px">
+  <p style="font-size:11px;color:var(--txt2);margin-bottom:10px;background:#f0f7f0;padding:7px 10px;border-radius:7px;border-left:3px solid var(--v)">
+    🖱️ <strong>Arraste</strong> qualquer nó (↑↓←→) &nbsp;·&nbsp; <strong>Clique</strong> num nó para ver <em>apenas seus fluxos</em> &nbsp;·&nbsp; Clique no fundo para limpar
   </p>
-  <a href="sankey_caceres.html" target="_blank"
-     style="display:inline-block;background:#1b5e20;color:#fff;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(27,94,32,.3)">
-    🔗 Abrir Diagrama Sankey →
-  </a>
-  <p style="font-size:11px;color:#aaa;margin-top:12px">Abre em nova aba</p>
+  <p id="sk-status" style="font-size:11px;color:#888;margin-bottom:6px">Aguardando...</p>
+  <div id="sk-wrap" style="width:100%;overflow-x:auto">
+    <svg id="sk-svg" style="display:block;min-width:600px"></svg>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;align-items:center">
+    <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;border-radius:3px;background:#c62828"></div>Positivo (↑ exposição → ↑ doença)</div>
+    <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;border-radius:3px;background:#1565c0"></div>Negativo (↑ exposição → ↓ doença)</div>
+  </div>
+  <p style="font-size:10px;color:#aaa;margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">
+    NASA POWER MERRA-2 · NASA MODIS AOD · DATASUS SIH/SUS · Cáceres-MT · 2010-2024 · Associação ≠ causalidade · Ernandes Sobreira Oliveira Junior · UNEMAT/CELBE/LIPAN-LEFA
+  </p>
 </div>
 </section>
 
@@ -1819,11 +1830,142 @@ function tab(id,btn){
   if(typeof btn==='object'&&btn) btn.classList.add('on');
   else{const ids=['inicio','sazo','serie','regr','risco','comp','hmap','tabr','sankey'];const nb=document.querySelectorAll('.nb');const i=ids.indexOf(id);if(i>=0&&nb[i])nb[i].classList.add('on');}
   if(id==='risco'){renderMensal();renderMensalTabela();}
-  // sankey abre em página separada
+  if(id==='sankey'){skSel=null;skPV=null;skPS=null;setTimeout(skBuild,0);}
 }
 
 
 
+
+// ══ SANKEY SVG NATIVO ══════════════════════════════════════
+const SK_DATA=[{"var":"T. m\u00e1xima","vk":"tmax","grupo":"ANIMAIS_PECONHENTOS","r":-0.121,"p":0.14511,"n":147,"sig":".","slope":-0.0673,"intercept":5.36},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"ASMA","r":0.157,"p":0.14873,"n":86,"sig":".","slope":0.035,"intercept":0.24},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"DENGUE","r":-0.166,"p":0.08694,"n":108,"sig":"~","slope":-0.3676,"intercept":17.52},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"NEOPLASIAS","r":0.151,"p":0.04255,"n":180,"sig":"*","slope":0.9025,"intercept":15.74},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"PNEUMONIA","r":-0.146,"p":0.05028,"n":180,"sig":"~","slope":-0.7187,"intercept":65.28},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"RENAL_URINARIO","r":0.269,"p":0.00026,"n":180,"sig":"***","slope":2.0218,"intercept":11.57},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"ASMA","r":0.181,"p":0.09604,"n":86,"sig":"~","slope":0.0636,"intercept":-0.22},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"CARDIOVASCULAR","r":-0.122,"p":0.10175,"n":180,"sig":".","slope":-0.9331,"intercept":104.27},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"PNEUMONIA","r":-0.181,"p":0.01493,"n":180,"sig":"*","slope":-1.3666,"intercept":76.28},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"RENAL_URINARIO","r":0.274,"p":0.00019,"n":180,"sig":"***","slope":3.1639,"intercept":-0.56},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"RESPIRATORIO","r":-0.173,"p":0.02019,"n":180,"sig":"*","slope":-1.7134,"intercept":113.38},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"ANIMAIS_PECONHENTOS","r":0.134,"p":0.10458,"n":147,"sig":".","slope":0.0033,"intercept":2.57},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"ASMA","r":-0.182,"p":0.09364,"n":86,"sig":"~","slope":-0.0018,"intercept":1.68},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"DENGUE","r":0.369,"p":9e-05,"n":108,"sig":"***","slope":0.0358,"intercept":0.78},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"NEOPLASIAS","r":-0.185,"p":0.01275,"n":180,"sig":"*","slope":-0.0505,"intercept":53.54},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"PNEUMONIA","r":-0.145,"p":0.0518,"n":180,"sig":"~","slope":-0.0326,"intercept":41.14},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"RENAL_URINARIO","r":-0.119,"p":0.11307,"n":180,"sig":".","slope":-0.0407,"intercept":90.32},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"RESPIRATORIO","r":-0.231,"p":0.00185,"n":180,"sig":"**","slope":-0.068,"intercept":71.54},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"TRANSTORNOS_MENTAIS","r":-0.238,"p":0.00785,"n":124,"sig":"**","slope":-0.0045,"intercept":2.56},{"var":"Umidade","vk":"umid","grupo":"ANIMAIS_PECONHENTOS","r":0.163,"p":0.04899,"n":147,"sig":"*","slope":0.02,"intercept":1.6},{"var":"Umidade","vk":"umid","grupo":"ASMA","r":-0.211,"p":0.05163,"n":86,"sig":"~","slope":-0.0092,"intercept":2.1},{"var":"Umidade","vk":"umid","grupo":"DENGUE","r":0.24,"p":0.01231,"n":108,"sig":"*","slope":0.1091,"intercept":-2.9},{"var":"Umidade","vk":"umid","grupo":"NEOPLASIAS","r":-0.164,"p":0.02748,"n":180,"sig":"*","slope":-0.2035,"intercept":61.84},{"var":"Umidade","vk":"umid","grupo":"RENAL_URINARIO","r":-0.199,"p":0.00745,"n":180,"sig":"**","slope":-0.3105,"intercept":105.95},{"var":"Umidade","vk":"umid","grupo":"TRANSTORNOS_MENTAIS","r":-0.163,"p":0.07004,"n":124,"sig":"~","slope":-0.014,"intercept":3.06},{"var":"AOD 550nm","vk":"aod","grupo":"ANIMAIS_PECONHENTOS","r":-0.146,"p":0.07803,"n":147,"sig":"~","slope":-1.8148,"intercept":3.38},{"var":"AOD 550nm","vk":"aod","grupo":"ASMA","r":0.16,"p":0.14055,"n":86,"sig":".","slope":0.7801,"intercept":1.32},{"var":"AOD 550nm","vk":"aod","grupo":"RENAL_URINARIO","r":0.146,"p":0.05056,"n":180,"sig":"~","slope":23.6616,"intercept":80.29},{"var":"AOD 550nm","vk":"aod","grupo":"DPOC","r":0.138,"p":0.07036,"n":172,"sig":"~","slope":3.1731,"intercept":3.95},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"ASMA","r":-0.253,"p":0.01884,"n":86,"sig":"*","slope":-0.025,"intercept":2.8},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"CAUSAS_EXTERNAS","r":0.13,"p":0.08232,"n":180,"sig":"~","slope":0.8872,"intercept":139.85},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"PNEUMONIA","r":-0.109,"p":0.14589,"n":180,"sig":".","slope":-0.2298,"intercept":50.31},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"RENAL_URINARIO","r":0.108,"p":0.14976,"n":180,"sig":".","slope":0.348,"intercept":69.05},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"RESPIRATORIO","r":-0.166,"p":0.0259,"n":180,"sig":"*","slope":-0.4604,"intercept":89.7},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"DPOC","r":-0.131,"p":0.08789,"n":172,"sig":"~","slope":-0.0581,"intercept":7.82}];
+const SK_VCOLS={'T. máxima':'#e53935','T. média':'#b71c1c','Sensação Térmica':'#880e4f','AOD 550nm':'#4e342e','Precipitação':'#1565c0','Umidade':'#0277bd'};
+let skF='sig',skSel=null,skPV=null,skPS=null,skDrag=false,skDN=null,skOX=0,skOY=0;
+
+function skSetFiltro(f,btn){
+  skF=f;
+  const s=document.getElementById('fsk-sig'),a=document.getElementById('fsk-all');
+  if(s&&a){s.className=f==='sig'?'btn prim':'btn sec';s.style.fontSize='11.5px';s.style.padding='5px 14px';s.style.borderRadius='20px';
+  a.className=f==='all'?'btn prim':'btn sec';a.style.fontSize='11.5px';a.style.padding='5px 14px';a.style.borderRadius='20px';}
+  skSel=null;skPV=null;skPS=null;skBuild();
+}
+
+function skNS(tag,at,tx){
+  const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const[k,v]of Object.entries(at||{}))e.setAttribute(k,String(v));
+  if(tx!==undefined)e.textContent=tx;
+  return e;
+}
+
+function skBuild(){
+  const st=document.getElementById('sk-status');
+  if(st)st.textContent='skBuild: '+new Date().toLocaleTimeString();
+  const sv=document.getElementById('sk-svg');
+  if(!sv){if(st)st.textContent='ERRO: sk-svg nao encontrado';return;}
+  const RAW=skF==='sig'?SK_DATA.filter(d=>d.p<0.05):SK_DATA;
+  const ce=document.getElementById('sk-count');
+  if(ce)ce.textContent=RAW.length+' pares';
+  const vi={},si={};
+  RAW.forEach(l=>{vi[l.var]=(vi[l.var]||0)+Math.abs(l.r);si[l.grupo]=(si[l.grupo]||0)+Math.abs(l.r);});
+  const vS=[...new Set(RAW.map(d=>d.var))].sort((a,b)=>vi[b]-vi[a]);
+  const sS=[...new Set(RAW.map(d=>d.grupo))].sort((a,b)=>si[b]-si[a]);
+  const W=880,NW=18,PV=10;
+  const H=Math.max(560,Math.max(vS.length,sS.length)*58),VH=H+60;
+  const XV=185,XS=W-195;
+  sv.setAttribute('viewBox','0 0 '+W+' '+VH);
+  sv.setAttribute('width',W);
+  sv.setAttribute('height',VH);
+  sv.innerHTML='';
+  function nh(set,imp){const t=set.reduce((s,n)=>s+(imp[n]||0),0),a=H-PV*(set.length-1);return set.map(n=>Math.max(20,(imp[n]||0)/t*a));}
+  function ny(h){const y=[];let c=36;h.forEach(x=>{y.push(c);c+=x+PV;});return y;}
+  const vH=nh(vS,vi),sH=nh(sS,si),vY=ny(vH),sY=ny(sH);
+  if(!skPV||skPV.length!==vS.length)skPV=vS.map((v,i)=>({id:v,x:XV,y:vY[i],h:vH[i]}));
+  else skPV.forEach((n,i)=>n.h=vH[i]);
+  if(!skPS||skPS.length!==sS.length)skPS=sS.map((s,i)=>({id:s,x:XS,y:sY[i],h:sH[i]}));
+  else skPS.forEach((n,i)=>n.h=sH[i]);
+  const nm={};[...skPV,...skPS].forEach(n=>nm[n.id]=n);
+  const gL=skNS('g',{}),gN=skNS('g',{});
+  const tt=document.getElementById('sk-tt');
+  function cp(x0,a,b,x1,c,d){const m=(x0+x1)/2;return 'M'+x0+','+a+' C'+m+','+a+' '+m+','+c+' '+x1+','+c+' L'+x1+','+d+' C'+m+','+d+' '+m+','+b+' '+x0+','+b+' Z';}
+  function dl(list,act){
+    const yo={},yi={};
+    skPV.forEach(n=>yo[n.id]=n.y);skPS.forEach(n=>yi[n.id]=n.y);
+    list.forEach(l=>{
+      const sig=l.p<0.05,lw=Math.max(3,Math.abs(l.r)*58),s=nm[l.var],t=nm[l.grupo];
+      if(!s||!t)return;
+      const x0=s.x+NW,x1=t.x,y0a=yo[l.var],y0b=y0a+lw,y1a=yi[l.grupo],y1b=y1a+lw;
+      yo[l.var]=y0b+2;yi[l.grupo]=y1b+2;
+      const col=act?(l.r>0?'#c62828':'#1565c0'):'#ccc';
+      const op=act?(skSel?0.82:sig?0.42+Math.abs(l.r)*0.45:0.18):0.05;
+      let p;
+      if(!act)p=skNS('path',{d:cp(x0,y0a,y0b,x1,y1a,y1b),fill:'#ccc',opacity:0.05});
+      else if(sig)p=skNS('path',{d:cp(x0,y0a,y0b,x1,y1a,y1b),fill:col,opacity:op});
+      else p=skNS('path',{d:cp(x0,y0a,y0b,x1,y1a,y1b),fill:'none',stroke:col,'stroke-width':Math.max(2,lw*0.5),'stroke-opacity':op*0.8,'stroke-dasharray':'6,4'});
+      if(act&&tt){
+        p.style.cursor='pointer';
+        p.addEventListener('mouseenter',function(e){
+          tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-12)+'px';
+          tt.innerHTML='<strong>'+l.var+'</strong><br>→ <strong>'+l.grupo.replace(/_/g,' ')+'</strong><br>r='+(l.r>0?'+':'')+l.r.toFixed(3)+' p='+l.p.toFixed(4)+'<br>'+(l.r>0?'↑ Positivo':'↓ Negativo')+' · '+(sig?'✓ Sig.':'~ Marginal')+' · n='+l.n+'m';
+        });
+        p.addEventListener('mousemove',function(e){tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-12)+'px';});
+        p.addEventListener('mouseleave',function(){tt.style.display='none';});
+      }
+      gL.appendChild(p);
+    });
+  }
+  const sorted=[...RAW].sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+  const active=skSel===null?sorted:sorted.filter(l=>l.var===skSel||l.grupo===skSel);
+  const inact=skSel===null?[]:sorted.filter(l=>l.var!==skSel&&l.grupo!==skSel);
+  dl(inact,false);dl(active,true);
+  function mkN(n,isV){
+    const col=isV?(SK_VCOLS[n.id]||'#2e7d32'):'#4a148c';
+    const isSel=skSel===n.id;
+    const hL=!isV&&(skSel===null||isSel||RAW.some(l=>(l.var===skSel&&l.grupo===n.id)||(l.grupo===skSel&&l.var===n.id)));
+    const op=isV?(skSel===null?1:isSel?1:0.25):(skSel===null?0.88:hL?0.88:0.12);
+    const g=skNS('g',{});g.style.cursor='pointer';
+    g.appendChild(skNS('rect',{x:n.x,y:n.y,width:NW,height:n.h,fill:col,rx:4,opacity:op,stroke:isSel?'#ffeb3b':'none','stroke-width':isSel?3:0}));
+    const lx=isV?n.x-7:n.x+NW+7,ta=isV?'end':'start';
+    const nc=isV?(skSel===null||isSel?col:'#bbb'):(hL?col:'#ccc');
+    g.appendChild(skNS('text',{x:lx,y:n.y+Math.max(n.h/2-7,8),'text-anchor':ta,'dominant-baseline':'middle','font-size':'12','font-weight':isV?'700':'600',fill:nc},n.id.replace(/_/g,' ')));
+    g.appendChild(skNS('text',{x:lx,y:n.y+Math.max(n.h/2+8,22),'text-anchor':ta,'dominant-baseline':'middle','font-size':'9',fill:isV?(skSel===null||isSel?'#888':'#ddd'):(hL?'#888':'#ddd')},'Σ|r|='+(isV?vi:si)[n.id].toFixed(2)));
+    g.addEventListener('click',function(e){e.stopPropagation();skSel=isSel?null:n.id;skBuild();});
+    g.addEventListener('mousedown',function(e){
+      e.stopPropagation();skDrag=true;skDN=n;
+      const r=sv.getBoundingClientRect();
+      skOX=(e.clientX-r.left)*(W/r.width)-n.x;
+      skOY=(e.clientY-r.top)*(VH/r.height)-n.y;
+    });
+    gN.appendChild(g);
+  }
+  skPV.forEach(n=>mkN(n,true));skPS.forEach(n=>mkN(n,false));
+  if(skSel){
+    const la=RAW.filter(l=>l.var===skSel||l.grupo===skSel).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+    const isV=vS.includes(skSel);
+    const ref=isV?skPV[vS.indexOf(skSel)]:skPS[sS.indexOf(skSel)];
+    const px=isV?ref.x+NW+22:ref.x-218,py=Math.max(36,ref.y);
+    gN.appendChild(skNS('rect',{x:px,y:py,width:212,height:18+la.length*17+10,fill:'#1a1a2e',rx:7,opacity:0.94}));
+    gN.appendChild(skNS('text',{x:px+8,y:py+13,'font-size':'9.5','font-weight':'800',fill:'#fff'},skSel.replace(/_/g,' ')));
+    la.forEach((l,i)=>{
+      const oth=l.var===skSel?l.grupo.replace(/_/g,' '):l.var;
+      const tc=skNS('text',{x:px+8,y:py+26+i*17,'font-size':'9',fill:l.r>0?'#ef9a9a':'#90caf9'});
+      tc.textContent=(l.p<0.05?'*':'~')+(l.r>0?' ↑ ':' ↓ ')+oth+'  r='+(l.r>0?'+':'')+l.r.toFixed(3);
+      gN.appendChild(tc);
+    });
+  }
+  gN.appendChild(skNS('text',{x:XV+NW/2,y:18,'text-anchor':'middle','font-size':'11','font-weight':'800',fill:'#2e7d32','letter-spacing':'1.5'},'AMBIENTE'));
+  gN.appendChild(skNS('text',{x:XS+NW/2,y:18,'text-anchor':'middle','font-size':'11','font-weight':'800',fill:'#4a148c','letter-spacing':'1.5'},'SAÚDE'));
+  sv.appendChild(gL);sv.appendChild(gN);
+  sv.onmousemove=function(e){
+    if(!skDrag||!skDN)return;
+    const r=sv.getBoundingClientRect();
+    skDN.x=(e.clientX-r.left)*(W/r.width)-skOX;
+    skDN.y=(e.clientY-r.top)*(VH/r.height)-skOY;
+    skBuild();
+  };
+  sv.onmouseup=function(){skDrag=false;skDN=null;};
+  if(st)st.textContent='SVG ok: '+sv.childNodes.length+' elementos';
+  sv.onmouseleave=function(){skDrag=false;skDN=null;};
+  sv.onclick=function(e){if(e.target===sv||e.target===gL||e.target===gN){skSel=null;skBuild();}};
+}
 document.addEventListener('DOMContentLoaded',()=>{
   // Abrir aba Início por padrão
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
