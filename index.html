@@ -987,7 +987,7 @@ footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 24px;
     🖱️ <strong>Arraste</strong> qualquer nó (↑↓←→) &nbsp;·&nbsp; <strong>Clique</strong> num nó para ver <em>apenas seus fluxos</em> &nbsp;·&nbsp; Clique no fundo para limpar
   </p>
   <p id="sk-status" style="font-size:11px;color:#888;margin-bottom:6px">Aguardando...</p>
-  <div id="sk-wrap" style="width:100%;overflow-x:auto">
+  <div id="sk-wrap" style="width:100%;overflow-x:auto;min-height:200px">
     <svg id="sk-svg" style="display:block;min-width:600px"></svg>
   </div>
   <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;align-items:center">
@@ -1872,8 +1872,13 @@ function skBuild(){
   const H=Math.max(560,Math.max(vS.length,sS.length)*58),VH=H+60;
   const XV=185,XS=W-195;
   sv.setAttribute('viewBox','0 0 '+W+' '+VH);
-  sv.setAttribute('width',W);
-  sv.setAttribute('height',VH);
+  sv.style.width = W+'px';
+  sv.style.height = VH+'px';
+  sv.style.display = 'block';
+  sv.style.minWidth = W+'px';
+  sv.style.minHeight = VH+'px';
+  sv.removeAttribute('width');
+  sv.removeAttribute('height');
   sv.innerHTML='';
   function nh(set,imp){const t=set.reduce((s,n)=>s+(imp[n]||0),0),a=H-PV*(set.length-1);return set.map(n=>Math.max(20,(imp[n]||0)/t*a));}
   function ny(h){const y=[];let c=36;h.forEach(x=>{y.push(c);c+=x+PV;});return y;}
