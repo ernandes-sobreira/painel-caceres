@@ -1821,208 +1821,124 @@ function tab(id,btn){
   if(typeof btn==='object'&&btn) btn.classList.add('on');
   else{const ids=['inicio','sazo','serie','regr','risco','comp','hmap','tabr','sankey'];const nb=document.querySelectorAll('.nb');const i=ids.indexOf(id);if(i>=0&&nb[i])nb[i].classList.add('on');}
   if(id==='risco'){renderMensal();renderMensalTabela();}
-  if(id==='sankey'){skBuild();}
+  if(id==='sankey'){setTimeout(skBuild,80);}
 }
 
 
 // ═══════════════════════════════════════════
-// SANKEY — CONEXÕES CLIMA-SAÚDE
+// SANKEY — CONEXÕES CLIMA-SAÚDE (SVG nativo)
 // ═══════════════════════════════════════════
 const SK_DATA = [{"var":"T. m\u00e1xima","vk":"tmax","grupo":"ANIMAIS_PECONHENTOS","r":-0.121,"p":0.14511,"n":147,"sig":".","slope":-0.0673,"intercept":5.36},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"ASMA","r":0.157,"p":0.14873,"n":86,"sig":".","slope":0.035,"intercept":0.24},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"DENGUE","r":-0.166,"p":0.08694,"n":108,"sig":"~","slope":-0.3676,"intercept":17.52},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"NEOPLASIAS","r":0.151,"p":0.04255,"n":180,"sig":"*","slope":0.9025,"intercept":15.74},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"PNEUMONIA","r":-0.146,"p":0.05028,"n":180,"sig":"~","slope":-0.7187,"intercept":65.28},{"var":"T. m\u00e1xima","vk":"tmax","grupo":"RENAL_URINARIO","r":0.269,"p":0.00026,"n":180,"sig":"***","slope":2.0218,"intercept":11.57},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"ASMA","r":0.181,"p":0.09604,"n":86,"sig":"~","slope":0.0636,"intercept":-0.22},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"CARDIOVASCULAR","r":-0.122,"p":0.10175,"n":180,"sig":".","slope":-0.9331,"intercept":104.27},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"PNEUMONIA","r":-0.181,"p":0.01493,"n":180,"sig":"*","slope":-1.3666,"intercept":76.28},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"RENAL_URINARIO","r":0.274,"p":0.00019,"n":180,"sig":"***","slope":3.1639,"intercept":-0.56},{"var":"T. m\u00e9dia","vk":"tmed","grupo":"RESPIRATORIO","r":-0.173,"p":0.02019,"n":180,"sig":"*","slope":-1.7134,"intercept":113.38},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"ANIMAIS_PECONHENTOS","r":0.134,"p":0.10458,"n":147,"sig":".","slope":0.0033,"intercept":2.57},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"ASMA","r":-0.182,"p":0.09364,"n":86,"sig":"~","slope":-0.0018,"intercept":1.68},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"DENGUE","r":0.369,"p":9e-05,"n":108,"sig":"***","slope":0.0358,"intercept":0.78},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"NEOPLASIAS","r":-0.185,"p":0.01275,"n":180,"sig":"*","slope":-0.0505,"intercept":53.54},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"PNEUMONIA","r":-0.145,"p":0.0518,"n":180,"sig":"~","slope":-0.0326,"intercept":41.14},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"RENAL_URINARIO","r":-0.119,"p":0.11307,"n":180,"sig":".","slope":-0.0407,"intercept":90.32},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"RESPIRATORIO","r":-0.231,"p":0.00185,"n":180,"sig":"**","slope":-0.068,"intercept":71.54},{"var":"Precipita\u00e7\u00e3o","vk":"prec","grupo":"TRANSTORNOS_MENTAIS","r":-0.238,"p":0.00785,"n":124,"sig":"**","slope":-0.0045,"intercept":2.56},{"var":"Umidade","vk":"umid","grupo":"ANIMAIS_PECONHENTOS","r":0.163,"p":0.04899,"n":147,"sig":"*","slope":0.02,"intercept":1.6},{"var":"Umidade","vk":"umid","grupo":"ASMA","r":-0.211,"p":0.05163,"n":86,"sig":"~","slope":-0.0092,"intercept":2.1},{"var":"Umidade","vk":"umid","grupo":"DENGUE","r":0.24,"p":0.01231,"n":108,"sig":"*","slope":0.1091,"intercept":-2.9},{"var":"Umidade","vk":"umid","grupo":"NEOPLASIAS","r":-0.164,"p":0.02748,"n":180,"sig":"*","slope":-0.2035,"intercept":61.84},{"var":"Umidade","vk":"umid","grupo":"RENAL_URINARIO","r":-0.199,"p":0.00745,"n":180,"sig":"**","slope":-0.3105,"intercept":105.95},{"var":"Umidade","vk":"umid","grupo":"TRANSTORNOS_MENTAIS","r":-0.163,"p":0.07004,"n":124,"sig":"~","slope":-0.014,"intercept":3.06},{"var":"AOD 550nm","vk":"aod","grupo":"ANIMAIS_PECONHENTOS","r":-0.146,"p":0.07803,"n":147,"sig":"~","slope":-1.8148,"intercept":3.38},{"var":"AOD 550nm","vk":"aod","grupo":"ASMA","r":0.16,"p":0.14055,"n":86,"sig":".","slope":0.7801,"intercept":1.32},{"var":"AOD 550nm","vk":"aod","grupo":"RENAL_URINARIO","r":0.146,"p":0.05056,"n":180,"sig":"~","slope":23.6616,"intercept":80.29},{"var":"AOD 550nm","vk":"aod","grupo":"DPOC","r":0.138,"p":0.07036,"n":172,"sig":"~","slope":3.1731,"intercept":3.95},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"ASMA","r":-0.253,"p":0.01884,"n":86,"sig":"*","slope":-0.025,"intercept":2.8},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"CAUSAS_EXTERNAS","r":0.13,"p":0.08232,"n":180,"sig":"~","slope":0.8872,"intercept":139.85},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"PNEUMONIA","r":-0.109,"p":0.14589,"n":180,"sig":".","slope":-0.2298,"intercept":50.31},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"RENAL_URINARIO","r":0.108,"p":0.14976,"n":180,"sig":".","slope":0.348,"intercept":69.05},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"RESPIRATORIO","r":-0.166,"p":0.0259,"n":180,"sig":"*","slope":-0.4604,"intercept":89.7},{"var":"Sensa\u00e7\u00e3o T\u00e9rmica","vk":"hi","grupo":"DPOC","r":-0.131,"p":0.08789,"n":172,"sig":"~","slope":-0.0581,"intercept":7.82}];
+const SK_VAR_COLS = {'T. máxima':'#e53935','T. média':'#b71c1c','Sensação Térmica':'#880e4f','AOD 550nm':'#4e342e','Precipitação':'#1565c0','Umidade':'#0277bd'};
+let skFiltro='sig',skSelected=null,skPosVar=null,skPosSau=null,skDragging=null,skDragOx=0,skDragOy=0;
 
-const SK_VAR_COLS = {
-  'T. máxima':'#e53935','T. média':'#b71c1c',
-  'Sensação Térmica':'#880e4f','AOD 550nm':'#4e342e',
-  'Precipitação':'#1565c0','Umidade':'#0277bd'
-};
-
-let skFiltro = 'sig';
-let skSelected = null;
-// Posições dos nós (persistem ao filtrar)
-let skPosVar = null, skPosSau = null;
-
-function skSetFiltro(f, btn){
-  skFiltro = f;
+function skSetFiltro(f,btn){
+  skFiltro=f;
   document.querySelectorAll('#filtros-sk .btn').forEach(b=>{b.className='btn sec';b.style.fontSize='11.5px';b.style.padding='5px 14px';b.style.borderRadius='20px';});
   btn.className='btn prim';btn.style.fontSize='11.5px';btn.style.padding='5px 14px';btn.style.borderRadius='20px';
-  skSelected = null;
-  skPosVar = null; skPosSau = null; // reset posições ao mudar filtro
-  skBuild();
+  skSelected=null;skPosVar=null;skPosSau=null;skBuild();
 }
-
-function skGetData(){
-  return skFiltro==='sig' ? SK_DATA.filter(d=>d.p<0.05) : SK_DATA;
-}
+function skGetData(){return skFiltro==='sig'?SK_DATA.filter(d=>d.p<0.05):SK_DATA;}
+function skNS(tag,attrs){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;}
+function skShowTT(e,l){const tt=document.getElementById('sk-tt');if(!tt)return;const dir=l.r>0?'↑ Positivo: ↑ exposição → ↑ doença':'↓ Negativo: ↑ exposição → ↓ doença';tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-12)+'px';tt.innerHTML='<strong>'+l.var+'</strong><br>→ <strong>'+l.grupo.replace(/_/g,' ')+'</strong><br>r = '+(l.r>0?'+':'')+l.r.toFixed(3)+'<br>p = '+l.p.toFixed(5)+'<br>'+dir+'<br><em>'+(l.p<0.05?'✓ Sig.':'~ Marginal')+' · n='+l.n+' meses</em>';}
+function skHideTT(){const tt=document.getElementById('sk-tt');if(tt)tt.style.display='none';}
 
 function skBuild(){
-  const RAW = skGetData();
-  const countEl = document.getElementById('sk-count');
-  if(countEl) countEl.textContent = RAW.length+' pares · '+[...new Set(RAW.map(d=>d.var))].length+' variáveis × '+[...new Set(RAW.map(d=>d.grupo))].length+' grupos';
-
-  const varImpact={}, sauImpact={};
-  RAW.forEach(l=>{
-    varImpact[l.var]=(varImpact[l.var]||0)+Math.abs(l.r);
-    sauImpact[l.grupo]=(sauImpact[l.grupo]||0)+Math.abs(l.r);
-  });
+  const RAW=skGetData();
+  const ce=document.getElementById('sk-count');
+  if(ce)ce.textContent=RAW.length+' pares · '+[...new Set(RAW.map(d=>d.var))].length+' vars × '+[...new Set(RAW.map(d=>d.grupo))].length+' grupos';
+  const varImpact={},sauImpact={};
+  RAW.forEach(l=>{varImpact[l.var]=(varImpact[l.var]||0)+Math.abs(l.r);sauImpact[l.grupo]=(sauImpact[l.grupo]||0)+Math.abs(l.r);});
   const varSet=[...new Set(RAW.map(d=>d.var))].sort((a,b)=>varImpact[b]-varImpact[a]);
   const sauSet=[...new Set(RAW.map(d=>d.grupo))].sort((a,b)=>sauImpact[b]-sauImpact[a]);
-
-  const svgEl = document.getElementById('sk-svg');
-  if(!svgEl) return;
-  const W = svgEl.parentElement.clientWidth - 32;
-  const NODE_W=20, PAD_V=11;
-  const H = Math.max(560, Math.max(varSet.length, sauSet.length)*60);
-
-  const svg = d3.select('#sk-svg').attr('height', H+50).attr('viewBox','0 0 '+W+' '+(H+50));
-  svg.selectAll('*').remove();
-
-  const X_VAR=190, X_SAU=W-210;
-
-  function nodeHeights(set, impact){
-    const tot=set.reduce((s,n)=>s+(impact[n]||0),0);
-    const avail=H-PAD_V*(set.length-1);
-    return set.map(n=>Math.max(22,(impact[n]||0)/tot*avail));
-  }
-  function nodeYs(heights){const ys=[];let y=34;heights.forEach(h=>{ys.push(y);y+=h+PAD_V;});return ys;}
-
-  const varHgt=nodeHeights(varSet,varImpact);
-  const sauHgt=nodeHeights(sauSet,sauImpact);
-  const varY0=nodeYs(varHgt);
-  const sauY0=nodeYs(sauHgt);
-
-  // Usar posições salvas se existirem (drag persiste)
-  if(!skPosVar || skPosVar.length!==varSet.length){
-    skPosVar=varSet.map((v,i)=>({id:v,x:X_VAR,y:varY0[i],h:varHgt[i]}));
-  } else {
-    skPosVar.forEach((n,i)=>{n.h=varHgt[i];});
-  }
-  if(!skPosSau || skPosSau.length!==sauSet.length){
-    skPosSau=sauSet.map((s,i)=>({id:s,x:X_SAU,y:sauY0[i],h:sauHgt[i]}));
-  } else {
-    skPosSau.forEach((n,i)=>{n.h=sauHgt[i];});
-  }
-
-  const nodeMap={};
-  [...skPosVar,...skPosSau].forEach(n=>nodeMap[n.id]=n);
-
-  const gL=svg.append('g'), gN=svg.append('g');
-  const tt=document.getElementById('sk-tt');
-
-  function skRedraw(){
-    gL.selectAll('*').remove(); gN.selectAll('*').remove();
-    const sorted=[...RAW].sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
-    const active=skSelected===null?sorted:sorted.filter(l=>l.var===skSelected||l.grupo===skSelected);
-    const inactive=skSelected===null?[]:sorted.filter(l=>l.var!==skSelected&&l.grupo!==skSelected);
-
-    function drawLinks(list, isActive){
-      const yOut={},yIn={};
-      skPosVar.forEach(n=>yOut[n.id]=n.y);
-      skPosSau.forEach(n=>yIn[n.id]=n.y);
-      list.forEach(l=>{
-        const isSig=l.p<0.05;
-        const lw=Math.max(3,Math.abs(l.r)*62);
-        const src=nodeMap[l.var],tgt=nodeMap[l.grupo];
-        if(!src||!tgt)return;
-        const x0=src.x+NODE_W,x1=tgt.x;
-        const y0a=yOut[l.var],y0b=y0a+lw;
-        const y1a=yIn[l.grupo],y1b=y1a+lw;
-        yOut[l.var]=y0b+2; yIn[l.grupo]=y1b+2;
-        const cx=(x0+x1)/2;
-        const col=isActive?(l.r>0?'#c62828':'#1565c0'):'#bbb';
-        const op=isActive?(skSelected!==null?0.82:isSig?0.42+Math.abs(l.r)*0.45:0.2):0.06;
-        const path=gL.append('path')
-          .attr('d','M'+x0+','+y0a+' C'+cx+','+y0a+' '+cx+','+y1a+' '+x1+','+y1a
-            +' L'+x1+','+y1b+' C'+cx+','+y1b+' '+cx+','+y0b+' '+x0+','+y0b+' Z');
-        if(isSig&&isActive){path.attr('fill',col).attr('opacity',op);}
-        else if(!isSig&&isActive){path.attr('fill','none').attr('stroke',col)
-          .attr('stroke-width',Math.max(2,lw*0.55)).attr('stroke-opacity',op*0.7).attr('stroke-dasharray','6,4');}
-        else{path.attr('fill','#ccc').attr('opacity',0.06);}
-        if(isActive&&tt){
-          path.style('cursor','pointer')
-            .on('mousemove',function(e){
-              const dir=l.r>0?'↑ Positivo: ↑ exposição → ↑ doença':'↓ Negativo: ↑ exposição → ↓ doença';
-              tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-12)+'px';
-              tt.innerHTML='<strong>'+l.var+'</strong><br>→ <strong>'+l.grupo.replace(/_/g,' ')
-                +'</strong><br>r = '+(l.r>0?'+':'')+l.r.toFixed(3)
-                +'<br>p = '+l.p.toFixed(5)+'<br>'+dir+'<br><em>'+(l.p<0.05?'✓ Significativa':'~ Marginal')+' · n='+l.n+' meses</em>';
-            }).on('mouseleave',()=>tt.style.display='none');
-        }
-      });
-    }
-    drawLinks(inactive,false); drawLinks(active,true);
-
-    function makeDrag(n){
-      return d3.drag()
-        .on('start',function(){d3.select(this.parentNode).raise();if(tt)tt.style.display='none';})
-        .on('drag',function(e){n.x+=e.dx;n.y+=e.dy;skRedraw();});
-    }
-
-    skPosVar.forEach(n=>{
-      const col=SK_VAR_COLS[n.id]||'#2e7d32';
-      const isSel=skSelected===n.id;
-      const op=skSelected===null?1:(isSel?1:0.28);
-      const g=gN.append('g').style('cursor','pointer');
-      g.append('rect').attr('x',n.x).attr('y',n.y).attr('width',NODE_W).attr('height',n.h)
-        .attr('fill',col).attr('rx',4).attr('opacity',op)
-        .attr('stroke',isSel?'#ffeb3b':'none').attr('stroke-width',isSel?3:0);
-      g.append('text').attr('x',n.x-8).attr('y',n.y+n.h/2-7).attr('text-anchor','end')
-        .attr('dominant-baseline','middle').style('font-size','12px').style('font-weight','700')
-        .style('fill',skSelected===null||isSel?col:'#bbb').text(n.id);
-      g.append('text').attr('x',n.x-8).attr('y',n.y+n.h/2+8).attr('text-anchor','end')
-        .attr('dominant-baseline','middle').style('font-size','9px')
-        .style('fill',skSelected===null||isSel?'#888':'#ddd')
-        .text('Σ|r|='+varImpact[n.id].toFixed(2)+' · '+RAW.filter(l=>l.var===n.id).length+'p');
-      g.on('click',function(e){e.stopPropagation();skSelected=isSel?null:n.id;skRedraw();});
-      g.call(makeDrag(n));
+  const sv=document.getElementById('sk-svg');
+  if(!sv)return;
+  // Medir largura de forma robusta
+  let W=0;
+  const card=sv.closest('.card');if(card&&card.clientWidth>200)W=card.clientWidth-32;
+  if(W<200){const pnl=document.getElementById('p-sankey');if(pnl&&pnl.clientWidth>200)W=pnl.clientWidth-48;}
+  if(W<200)W=Math.max(600,window.innerWidth-80);
+  const NODE_W=20,PAD_V=11,H=Math.max(580,Math.max(varSet.length,sauSet.length)*60),TH=H+60;
+  const X_VAR=190,X_SAU=W-210;
+  sv.setAttribute('viewBox','0 0 '+W+' '+TH);sv.setAttribute('height',TH);sv.innerHTML='';
+  function nh(set,imp){const tot=set.reduce((s,n)=>s+(imp[n]||0),0),av=H-PAD_V*(set.length-1);return set.map(n=>Math.max(22,(imp[n]||0)/tot*av));}
+  function ny(hts){const ys=[];let y=36;hts.forEach(h=>{ys.push(y);y+=h+PAD_V;});return ys;}
+  const vH=nh(varSet,varImpact),sH=nh(sauSet,sauImpact),vY=ny(vH),sY=ny(sH);
+  if(!skPosVar||skPosVar.length!==varSet.length)skPosVar=varSet.map((v,i)=>({id:v,x:X_VAR,y:vY[i],h:vH[i]}));
+  else skPosVar.forEach((n,i)=>n.h=vH[i]);
+  if(!skPosSau||skPosSau.length!==sauSet.length)skPosSau=sauSet.map((s,i)=>({id:s,x:X_SAU,y:sY[i],h:sH[i]}));
+  else skPosSau.forEach((n,i)=>n.h=sH[i]);
+  const nm={};[...skPosVar,...skPosSau].forEach(n=>nm[n.id]=n);
+  const gL=skNS('g',{}),gN=skNS('g',{});
+  function cp(x0,y0a,y0b,x1,y1a,y1b){const cx=(x0+x1)/2;return 'M'+x0+','+y0a+' C'+cx+','+y0a+' '+cx+','+y1a+' '+x1+','+y1a+' L'+x1+','+y1b+' C'+cx+','+y1b+' '+cx+','+y0b+' '+x0+','+y0b+' Z';}
+  function dLinks(list,isAct){
+    const yo={},yi={};
+    skPosVar.forEach(n=>yo[n.id]=n.y);skPosSau.forEach(n=>yi[n.id]=n.y);
+    list.forEach(l=>{
+      const sig=l.p<0.05,lw=Math.max(3,Math.abs(l.r)*62),src=nm[l.var],tgt=nm[l.grupo];
+      if(!src||!tgt)return;
+      const x0=src.x+NODE_W,x1=tgt.x,y0a=yo[l.var],y0b=y0a+lw,y1a=yi[l.grupo],y1b=y1a+lw;
+      yo[l.var]=y0b+2;yi[l.grupo]=y1b+2;
+      const col=isAct?(l.r>0?'#c62828':'#1565c0'):'#bbb';
+      let p;
+      if(!isAct){p=skNS('path',{d:cp(x0,y0a,y0b,x1,y1a,y1b),fill:'#ccc',opacity:0.06});}
+      else if(sig){const op=skSelected?0.82:0.38+Math.abs(l.r)*0.48;p=skNS('path',{d:cp(x0,y0a,y0b,x1,y1a,y1b),fill:col,opacity:op});}
+      else{const op=(skSelected?0.7:0.42)*0.85;p=skNS('path',{d:cp(x0,y0a,y0b,x1,y1a,y1b),fill:'none',stroke:col,'stroke-width':Math.max(2,lw*0.55),'stroke-opacity':op,'stroke-dasharray':'6,4'});}
+      if(isAct){p.style.cursor='pointer';p.addEventListener('mouseenter',e=>skShowTT(e,l));p.addEventListener('mousemove',e=>{const t=document.getElementById('sk-tt');if(t){t.style.left=(e.clientX+14)+'px';t.style.top=(e.clientY-12)+'px';}});p.addEventListener('mouseleave',skHideTT);}
+      gL.appendChild(p);
     });
-
-    skPosSau.forEach(n=>{
-      const isSel=skSelected===n.id;
-      const hasLink=skSelected===null||isSel||RAW.some(l=>(l.var===skSelected&&l.grupo===n.id)||(l.grupo===skSelected&&l.var===n.id));
-      const op=skSelected===null?0.88:(hasLink?0.88:0.15);
-      const g=gN.append('g').style('cursor','pointer');
-      g.append('rect').attr('x',n.x).attr('y',n.y).attr('width',NODE_W).attr('height',n.h)
-        .attr('fill','#4a148c').attr('rx',4).attr('opacity',op)
-        .attr('stroke',isSel?'#ffeb3b':'none').attr('stroke-width',isSel?3:0);
-      g.append('text').attr('x',n.x+NODE_W+8).attr('y',n.y+n.h/2-7)
-        .attr('dominant-baseline','middle').style('font-size','12px').style('font-weight','600')
-        .style('fill',hasLink?'#4a148c':'#ccc').text(n.id.replace(/_/g,' '));
-      g.append('text').attr('x',n.x+NODE_W+8).attr('y',n.y+n.h/2+8)
-        .attr('dominant-baseline','middle').style('font-size','9px')
-        .style('fill',hasLink?'#888':'#ddd').text('Σ|r|='+sauImpact[n.id].toFixed(2));
-      g.on('click',function(e){e.stopPropagation();skSelected=isSel?null:n.id;skRedraw();});
-      g.call(makeDrag(n));
-    });
-
-    if(skSelected){
-      const la=RAW.filter(l=>l.var===skSelected||l.grupo===skSelected).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
-      const isV=varSet.includes(skSelected);
-      const ref=isV?skPosVar[varSet.indexOf(skSelected)]:skPosSau[sauSet.indexOf(skSelected)];
-      const px=isV?ref.x+NODE_W+26:ref.x-222, py=Math.max(34,ref.y);
-      const pan=gN.append('g');
-      pan.append('rect').attr('x',px).attr('y',py).attr('width',214).attr('height',16+la.length*18+10)
-        .attr('fill','#1a1a2e').attr('rx',7).attr('opacity',0.94);
-      pan.append('text').attr('x',px+8).attr('y',py+13).style('font-size','10px')
-        .style('font-weight','800').style('fill','#fff').text(skSelected.replace(/_/g,' '));
-      la.forEach((l,i)=>{
-        const other=l.var===skSelected?l.grupo.replace(/_/g,' '):l.var;
-        const col=l.r>0?'#ef9a9a':'#90caf9';
-        pan.append('text').attr('x',px+8).attr('y',py+26+i*18).style('font-size','9.5px').style('fill',col)
-          .text((l.p<0.05?'*':'~')+(l.r>0?' ↑ ':' ↓ ')+other+'  r='+(l.r>0?'+':'')+l.r.toFixed(3)+'  p='+l.p.toFixed(4));
-      });
-    }
-
-    gN.append('text').attr('x',X_VAR+NODE_W/2).attr('y',18).attr('text-anchor','middle')
-      .style('font-size','11px').style('font-weight','800').style('fill','#2e7d32')
-      .style('letter-spacing','1.5px').text('AMBIENTE');
-    gN.append('text').attr('x',X_SAU+NODE_W/2).attr('y',18).attr('text-anchor','middle')
-      .style('font-size','11px').style('font-weight','800').style('fill','#4a148c')
-      .style('letter-spacing','1.5px').text('SAÚDE');
   }
-
-  svg.on('click',()=>{skSelected=null;skRedraw();});
-  skRedraw();
+  const sorted=[...RAW].sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+  const active=skSelected===null?sorted:sorted.filter(l=>l.var===skSelected||l.grupo===skSelected);
+  const inact=skSelected===null?[]:sorted.filter(l=>l.var!==skSelected&&l.grupo!==skSelected);
+  dLinks(inact,false);dLinks(active,true);
+  function mkNode(n,isVar){
+    const col=isVar?(SK_VAR_COLS[n.id]||'#2e7d32'):'#4a148c';
+    const isSel=skSelected===n.id;
+    const hasLink=!isVar&&(skSelected===null||isSel||RAW.some(l=>(l.var===skSelected&&l.grupo===n.id)||(l.grupo===skSelected&&l.var===n.id)));
+    const op=isVar?(skSelected===null?1:isSel?1:0.28):(skSelected===null?0.88:hasLink?0.88:0.15);
+    const g=skNS('g',{});g.style.cursor='pointer';
+    g.appendChild(skNS('rect',{x:n.x,y:n.y,width:NODE_W,height:n.h,fill:col,rx:4,opacity:op,stroke:isSel?'#ffeb3b':'none','stroke-width':isSel?3:0}));
+    const lx=isVar?n.x-8:n.x+NODE_W+8,ta=isVar?'end':'start';
+    const t1=skNS('text',{x:lx,y:n.y+Math.max(n.h/2-7,8),'text-anchor':ta,'dominant-baseline':'middle','font-size':'12','font-weight':isVar?'700':'600',fill:isVar?(skSelected===null||isSel?col:'#bbb'):(hasLink?col:'#ccc')});
+    t1.textContent=n.id.replace(/_/g,' ');g.appendChild(t1);
+    const t2=skNS('text',{x:lx,y:n.y+Math.max(n.h/2+8,22),'text-anchor':ta,'dominant-baseline':'middle','font-size':'9',fill:isVar?(skSelected===null||isSel?'#888':'#ddd'):(hasLink?'#888':'#ddd')});
+    t2.textContent=isVar?'Σ|r|='+(isVar?varImpact:sauImpact)[n.id].toFixed(2)+' · '+RAW.filter(l=>l.var===n.id).length+'p':'Σ|r|='+sauImpact[n.id].toFixed(2);
+    g.appendChild(t2);
+    g.addEventListener('click',e=>{e.stopPropagation();skSelected=isSel?null:n.id;skBuild();});
+    g.addEventListener('mousedown',e=>{e.stopPropagation();skDragging=n;const r=sv.getBoundingClientRect();const sx=W/r.width,sy=TH/r.height;skDragOx=(e.clientX-r.left)*sx-n.x;skDragOy=(e.clientY-r.top)*sy-n.y;});
+    gN.appendChild(g);
+  }
+  skPosVar.forEach(n=>mkNode(n,true));
+  skPosSau.forEach(n=>mkNode(n,false));
+  // Painel detalhe
+  if(skSelected){
+    const la=RAW.filter(l=>l.var===skSelected||l.grupo===skSelected).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+    const isV=varSet.includes(skSelected);
+    const ref=isV?skPosVar[varSet.indexOf(skSelected)]:skPosSau[sauSet.indexOf(skSelected)];
+    const px=isV?ref.x+NODE_W+26:ref.x-222,py=Math.max(36,ref.y);
+    gN.appendChild(skNS('rect',{x:px,y:py,width:214,height:18+la.length*18+10,fill:'#1a1a2e',rx:7,opacity:0.94}));
+    const tit=skNS('text',{x:px+8,y:py+14,'font-size':'10','font-weight':'800',fill:'#fff'});
+    tit.textContent=skSelected.replace(/_/g,' ');gN.appendChild(tit);
+    la.forEach((l,i)=>{const oth=l.var===skSelected?l.grupo.replace(/_/g,' '):l.var;const tc=skNS('text',{x:px+8,y:py+28+i*18,'font-size':'9.5',fill:l.r>0?'#ef9a9a':'#90caf9'});tc.textContent=(l.p<0.05?'*':'~')+(l.r>0?' ↑ ':' ↓ ')+oth+'  r='+(l.r>0?'+':'')+l.r.toFixed(3)+'  p='+l.p.toFixed(4);gN.appendChild(tc);});
+  }
+  // Cabeçalhos
+  const hv=skNS('text',{x:X_VAR+NODE_W/2,y:18,'text-anchor':'middle','font-size':'11','font-weight':'800',fill:'#2e7d32'});hv.textContent='AMBIENTE';gN.appendChild(hv);
+  const hs=skNS('text',{x:X_SAU+NODE_W/2,y:18,'text-anchor':'middle','font-size':'11','font-weight':'800',fill:'#4a148c'});hs.textContent='SAÚDE';gN.appendChild(hs);
+  sv.appendChild(gL);sv.appendChild(gN);
+  sv.addEventListener('click',()=>{skSelected=null;skBuild();},{once:true});
+  sv.addEventListener('mousemove',e=>{
+    if(!skDragging)return;
+    const r=sv.getBoundingClientRect(),sx=W/r.width,sy=TH/r.height;
+    skDragging.x=(e.clientX-r.left)*sx-skDragOx;
+    skDragging.y=(e.clientY-r.top)*sy-skDragOy;
+    skBuild();
+  });
+  sv.addEventListener('mouseup',()=>skDragging=null);
+  sv.addEventListener('mouseleave',()=>skDragging=null);
 }
+
+
 document.addEventListener('DOMContentLoaded',()=>{
   // Abrir aba Início por padrão
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
