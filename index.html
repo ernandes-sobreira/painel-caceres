@@ -182,7 +182,7 @@ footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 24px;
   <button class="nb" onclick="tab('comp',this)"><span class="dot" style="background:var(--am)"></span>Comparar Anos</button>
   <button class="nb" onclick="tab('hmap',this)"><span class="dot" style="background:var(--fg)"></span>Heatmaps</button>
   <button class="nb" onclick="tab('tabr',this)"><span class="dot" style="background:var(--ci)"></span>Correlações</button>
-  <button class="nb" onclick="tab('sankey',this)"><span class="dot" style="background:#6a1b9a"></span>Conexões Clima-Saúde</button>
+  <a class="nb" href="sankey_caceres.html" target="_blank" style="text-decoration:none"><span class="dot" style="background:#6a1b9a"></span>Conexões Clima-Saúde ↗</a>
 </nav>
 
 <main class="main">
@@ -967,22 +967,7 @@ footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 24px;
 
 
 <!-- ══ SANKEY ══════════════════════════════ -->
-<section class="pnl" id="p-sankey">
-<div class="card" style="text-align:center;padding:60px 20px">
-  <div style="font-size:52px;margin-bottom:16px">🌡️</div>
-  <h2 style="font-size:20px;font-weight:800;color:#1b5e20;margin-bottom:10px">Conexões Clima-Saúde</h2>
-  <p style="font-size:13px;color:#555;max-width:480px;margin:0 auto 24px;line-height:1.7">
-    Diagrama Sankey interativo com as associações estatísticas entre
-    variáveis ambientais e grupos diagnósticos em Cáceres-MT (2010-2024).
-  </p>
-  <a href="sankey_caceres.html" target="_blank"
-     style="display:inline-block;background:#1b5e20;color:#fff;padding:14px 36px;
-            border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;
-            box-shadow:0 2px 10px rgba(27,94,32,.35)">
-    Abrir Diagrama →
-  </a>
-</div>
-</section>
+
 
 
 
@@ -1814,7 +1799,7 @@ function tab(id,btn){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.getElementById('p-'+id).classList.add('on');
   if(typeof btn==='object'&&btn) btn.classList.add('on');
-  else{const ids=['inicio','sazo','serie','regr','risco','comp','hmap','tabr','sankey'];const nb=document.querySelectorAll('.nb');const i=ids.indexOf(id);if(i>=0&&nb[i])nb[i].classList.add('on');}
+  else{const ids=['inicio','sazo','serie','regr','risco','comp','hmap','tabr'];const nb=document.querySelectorAll('.nb');const i=ids.indexOf(id);if(i>=0&&nb[i])nb[i].classList.add('on');}
   if(id==='risco'){renderMensal();renderMensalTabela();}
   
 }
